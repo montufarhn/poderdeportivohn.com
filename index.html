@@ -44,8 +44,36 @@
 		   <div class="main-content">
 		   	<div class="row">
 		   		<div class="col-twelve">
-<iframe src='https://ssh101.com/sldp/index.php?id=poderdeportivo' frameborder=0 scrolling=no align=middle width=852 height=480  webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>	
-				</div> <!-- /twelve --> 		   			
+  <head>
+    <meta charset="utf-8"/>
+    <script src="sldp-v2.25.0.min.js"></script>
+  </head>
+  <body>
+    <div id="player"></div>
+
+    <script type="text/javascript">
+      document.addEventListener("DOMContentLoaded", initPlayer);
+
+      function initPlayer(){
+        sldpPlayer = SLDP.init({
+          container:           'player',
+          stream_url:          'wss://ssh101.bozztv.com/ssh101/poderdeportivo',
+          adaptive_bitrate: {
+            initial_rendition: '240p'
+          },
+          buffering:           500,
+          autoplay:            true,
+          height:              480,
+          width:               424
+        });
+      };
+
+      function removePlayer(){
+        sldpPlayer.destroy(function () {
+          console.log('SLDP Player is destroyed.');
+        });
+      }
+    </script>				</div> <!-- /twelve --> 		   			
 		   	</div> <!-- /row -->    		 		
 		   </div> <!-- /main-content --> 
 
