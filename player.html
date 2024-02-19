@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <script src="sldp-v2.25.0.min.js"></script>
+  </head>
+  <body>
+    <div id="player"></div>
+
+    <script type="text/javascript">
+      document.addEventListener("DOMContentLoaded", initPlayer);
+
+      function initPlayer(){
+        sldpPlayer = SLDP.init({
+          container:           'player',
+          stream_url:          'wss://ssh101.bozztv.com/ssh101/poderdeportivo',
+          adaptive_bitrate: {
+            initial_rendition: '480p'
+          },
+          buffering:           500,
+          autoplay:            true,
+          height:              480,
+          width:               424
+        });
+      };
+
+      function removePlayer(){
+        sldpPlayer.destroy(function () {
+          console.log('SLDP Player is destroyed.');
+        });
+      }
+    </script>
+  </body>
+</html>
