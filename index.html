@@ -54,7 +54,7 @@
             position: relative;
             width: 100%;
             max-width: 1280px; /* Ancho máximo para el reproductor de video */
-            padding-top: 52.25%; /* Relación de aspecto 16:9 (altura / ancho * 100) */
+            padding-top: 39.5%; /* Relación de aspecto 16:9 (9 / 16 * 100) */
         }
 
         .video-responsive-container iframe {
@@ -189,7 +189,7 @@
     <!-- Área principal de contenido para el reproductor de video -->
     <div class="content-area">
         <div class="video-responsive-container">
-            <iframe title="Reproductor de video en vivo de SULATV" src="https://webmedialive.com/SULATV/" allow="autoplay; fullscreen" allowfullscreen></iframe>
+            <iframe src="https://www.youtube.com/embed/live_stream?channel=UCWjFYIgvyxX6f9s60fo2sxQ&autoplay=1&mute=0" title="Transmisión en vivo de Poder Deportivo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
     </div>
 
@@ -222,24 +222,6 @@
    <script src="js/jquery-2.1.3.min.js"></script>
    <script src="js/plugins.js"></script>
    <script src="js/main.js"></script>
-
-   <script>
-       (function() {
-           const playerIframe = document.querySelector('.video-responsive-container iframe');
-           if (!playerIframe) return;
-
-           let resizeTimer;
-
-           window.addEventListener('resize', function() {
-               clearTimeout(resizeTimer);
-               resizeTimer = setTimeout(function() {
-                   // Recargamos el iframe para que el player se re-inicialice con el nuevo tamaño.
-                   // Usamos .src = .src para una recarga simple.
-                   playerIframe.src = playerIframe.src;
-               }, 250); // Un pequeño retardo para no recargar en cada micro-movimiento.
-           });
-       })();
-   </script>
 
 </body>
 
