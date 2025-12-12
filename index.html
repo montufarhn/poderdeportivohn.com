@@ -43,9 +43,9 @@
 
         .content-area {
             display: flex;
-            justify-content: center; /* Centra horizontalmente */
-            margin-top: auto; /* Ayuda a centrar el contenido si hay espacio extra */
-            margin-bottom: auto; /* Ayuda a centrar el contenido si hay espacio extra */
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1; /* Hace que esta área ocupe el espacio disponible */
             padding: 20px; /* Espaciado alrededor del contenedor del video */
             box-sizing: border-box; /* Incluye el padding en el tamaño total del elemento */
         }
@@ -53,8 +53,8 @@
         .video-responsive-container {
             position: relative;
             width: 100%;
-            max-width: 1280px; /* Ancho máximo para el reproductor de video */
-            padding-top: 39.5%; /* Relación de aspecto 16:9 (9 / 16 * 100) */
+            max-width: 1024px; /* Ancho máximo reducido para el reproductor de video */
+            padding-top: 31.25%; /* Relación de aspecto 16:9 (9 / 16 * 100) */
         }
 
         .video-responsive-container iframe {
