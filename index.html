@@ -75,7 +75,9 @@
         .chat-column {
             display: flex;
             flex-direction: column;
+            height: min(70vh, 720px);
             min-height: 520px;
+            max-height: 720px;
         }
 
         .chat-header {
@@ -109,6 +111,7 @@
 
         .chat-messages {
             flex: 1;
+            min-height: 0;
             padding: 12px;
             overflow-y: auto;
             display: flex;
@@ -178,7 +181,9 @@
             }
 
             .chat-column {
+                height: 420px;
                 min-height: 420px;
+                max-height: 420px;
             }
         }
 

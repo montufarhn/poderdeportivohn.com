@@ -58,7 +58,9 @@
             messagesEl.appendChild(item);
         });
 
-        messagesEl.scrollTop = messagesEl.scrollHeight;
+        window.requestAnimationFrame(function () {
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        });
     }
 
     function addMessage(message, shouldPersist) {
