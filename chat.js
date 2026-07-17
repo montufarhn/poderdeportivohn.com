@@ -119,7 +119,7 @@
 
             auth.signInAnonymously().then(function () {
                 firebaseReady = true;
-                setStatus('Firebase seguro', true);
+                setStatus('Chat seguro', true);
 
                 database.ref('pdhn-live-chat').limitToLast(MAX_MESSAGES).on('value', function (snapshot) {
                     const values = snapshot.val() || {};
