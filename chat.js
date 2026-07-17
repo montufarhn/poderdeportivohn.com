@@ -104,7 +104,7 @@
         const hasFirebase = Boolean(config.apiKey && config.projectId && config.databaseURL);
 
         if (!hasFirebase || !window.firebase) {
-            setStatus('GitHub Pages', true);
+            setStatus('Modo local', true);
             loadMessages();
             setupBroadcastChannel();
             setupStorageSync();
@@ -127,14 +127,16 @@
                     renderMessages();
                     persistMessages();
                 });
-            }).catch(function () {
-                setStatus('GitHub Pages', true);
+            }).catch(function (error) {
+                setStatus('Firebase no disponible', false);
+                console.error('Firebase auth error', error);
                 loadMessages();
                 setupBroadcastChannel();
                 setupStorageSync();
             });
         } catch (error) {
-            setStatus('GitHub Pages', true);
+            setStatus('Firebase no disponible', false);
+            console.error('Firebase init error', error);
             loadMessages();
             setupBroadcastChannel();
             setupStorageSync();
