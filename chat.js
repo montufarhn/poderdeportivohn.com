@@ -12,6 +12,7 @@
     let messages = [];
     let channel = null;
     let database = null;
+    let auth = null;
     let firebaseReady = false;
 
     function setStatus(text, ok) {
@@ -112,15 +113,25 @@
 
         try {
             window.firebase.initializeApp(config);
+            auth = window.firebase.auth();
             database = window.firebase.database();
-            firebaseReady = true;
-            setStatus('Firebase', true);
+            setStatus('Conectando Firebase', false);
 
-            database.ref('pdhn-live-chat').limitToLast(MAX_MESSAGES).on('value', function (snapshot) {
-                const values = snapshot.val() || {};
-                messages = Object.values(values).slice(-MAX_MESSAGES);
-                renderMessages();
-                persistMessages();
+            auth.signInAnonymously().then(function () {
+                firebaseReady = true;
+                setStatus('Firebase seguro', true);
+
+                database.ref('pdhn-live-chat').limitToLast(MAX_MESSAGES).on('value', function (snapshot) {
+                    const values = snapshot.val() || {};
+                    messages = Object.values(values).slice(-MAX_MESSAGES);
+                    renderMessages();
+                    persistMessages();
+                });
+            }).catch(function () {
+                setStatus('GitHub Pages', true);
+                loadMessages();
+                setupBroadcastChannel();
+                setupStorageSync();
             });
         } catch (error) {
             setStatus('GitHub Pages', true);
