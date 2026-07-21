@@ -21,16 +21,10 @@
     <div id="sldp-player-wrapper">
     </div>
     <script>
-        function detectOS() {
-            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        let sldpPlayer = null;
 
-            if (/android/i.test(userAgent)) {
-                loadSLDPPlayer();
-            } else if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-                loadSLDPPlayer();
-            } else {
-                loadSLDPPlayer();
-            }
+        function detectOS() {
+            loadSLDPPlayer();
         }
 
         function loadSLDPPlayer() {
@@ -39,10 +33,20 @@
             sldpScript.onload = function () {
                 initializeSLDPPlayer();
             };
+            sldpScript.onerror = function () {
+                console.warn('Fallo al cargar script remoto SLDP, intentando script local...');
+                const localScript = document.createElement('script');
+                localScript.src = 'sldp-v2.25.0.min.js';
+                localScript.onload = function () {
+                    initializeSLDPPlayer();
+                };
+                document.head.appendChild(localScript);
+            };
             document.head.appendChild(sldpScript);
         }
 
         function initializeSLDPPlayer() {
+            if (typeof SLDP === 'undefined') return;
             const sldpPlayerWrapper = document.getElementById('sldp-player-wrapper');
             sldpPlayerWrapper.innerHTML = ""; // Clear previous content
             const width = sldpPlayerWrapper.clientWidth;

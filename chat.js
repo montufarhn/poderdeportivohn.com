@@ -124,8 +124,14 @@
                 setStatus('Chat seguro', true);
 
                 database.ref('pdhn-live-chat').limitToLast(MAX_MESSAGES).on('value', function (snapshot) {
-                    const values = snapshot.val() || {};
-                    messages = Object.values(values).slice(-MAX_MESSAGES);
+                    const loadedMessages = [];
+                    snapshot.forEach(function (childSnapshot) {
+                        const val = childSnapshot.val();
+                        if (val && val.name && val.text) {
+                            loadedMessages.push(val);
+                        }
+                    });
+                    messages = loadedMessages.slice(-MAX_MESSAGES);
                     renderMessages();
                     persistMessages();
                 });
@@ -172,7 +178,7 @@
         event.preventDefault();
 
         const name = (nameEl.value || 'Televidente').trim().slice(0, 18) || 'Televidente';
-        const text = inputEl.value.trim().slice(0, 180);
+        const text = inputEl.value.trim().slice(0, 280);
         if (!text) return;
 
         sendMessage(name, text);

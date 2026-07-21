@@ -12,15 +12,20 @@
 	/* --------------------------------------------------- */
 	/* Preloader
 	------------------------------------------------------ */ 
-   $(window).load(function() {
-      // will first fade out the loading animation 
-    	$("#loader").fadeOut("slow", function(){
+	function hidePreloader() {
+		$("#loader").fadeOut("slow", function(){
+			$("#preloader").delay(300).fadeOut("slow");
+		});
+	}
 
-        // will fade out the whole DIV that covers the website.
-        $("#preloader").delay(300).fadeOut("slow");
+	$(window).on('load', hidePreloader);
 
-      }); 
-  	})
+	// Fallback por si la carga de red tarda o falla algún recurso
+	setTimeout(function() {
+		if ($("#preloader").is(":visible")) {
+			hidePreloader();
+		}
+	}, 3500);
 
 
   	/* --------------------------------------------------- */
@@ -103,7 +108,7 @@
 		transitionDuration: 2500,
 		delay: 5000,
     	slides: [
-       	{ src: "images/slides/woods.jpg" },
+       	{ src: "images/slides/slide-1.jpg" },
         	{ src: "images/slides/greens.jpg" },
         	{ src: "images/slides/dandelion.jpg" }
     	]

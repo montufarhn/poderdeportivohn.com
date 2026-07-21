@@ -28,7 +28,7 @@ async def handler(websocket):
                 continue
 
             name = (payload.get("name") or "Televidente").strip()[:18] or "Televidente"
-            text = (payload.get("text") or "").strip()[:180]
+            text = (payload.get("text") or "").strip()[:280]
             if not text:
                 continue
 
