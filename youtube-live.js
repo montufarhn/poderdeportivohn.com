@@ -21,40 +21,67 @@
     if (!playerIframe) return;
 
     const channelId = (config.channelId || 'UCWjFYIgvyxX6f9s60fo2sxQ').trim();
-    let videoId = (urlVideoId || config.videoId || '').trim();
+    const manualVideoId = (urlVideoId || config.videoId || '').trim();
 
-    // 0. CARGA ULTRA-RÁPIDA: Si el reproductor no tiene src, asignar inmediatamente el stream del canal
+    // ─────────────────────────────────────────────────────────────────────────
+    // REGLA PRINCIPAL: El player usa SIEMPRE live_stream?channel= a menos que
+    // se haya configurado un videoId manual. Esto evita interrupciones al
+    // detectar el ID del stream en segundo plano.
+    //
+    // CAUSA DEL BUG: Cambiar playerIframe.src reinicia el iframe por completo
+    // y corta la transmisión durante ~1 minuto mientras recarga el embed.
+    // Solución: el player nunca se toca; solo se actualiza el chat.
+    // ─────────────────────────────────────────────────────────────────────────
     const fallbackStreamUrl = `https://www.youtube.com/embed/live_stream?channel=${channelId}&autoplay=1`;
+
+    if (manualVideoId) {
+        // Modo manual: video específico configurado en youtube-config.js o URL
+        const manualSrc = `https://www.youtube.com/embed/${manualVideoId}?autoplay=1`;
+        if (playerIframe.src !== manualSrc) playerIframe.src = manualSrc;
+        updateChat(manualVideoId);
+        if (statusEl) statusEl.textContent = 'En Vivo';
+        return; // No necesitamos auto-detección
+    }
+
+    // Modo auto: player siempre en live_stream (sin interrupción)
     if (!playerIframe.src || playerIframe.src === '' || playerIframe.src === window.location.href) {
         playerIframe.src = fallbackStreamUrl;
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Solo actualizamos el CHAT con el videoId específico, nunca el player.
+    // ─────────────────────────────────────────────────────────────────────────
+    function updateChat(videoId) {
+        if (!chatIframe) return;
+        const targetChatSrc = `https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${domain}`;
+        if (chatIframe.src !== targetChatSrc) {
+            chatIframe.src = targetChatSrc;
+        }
+    }
+
+    function showOfflineChat() {
+        if (!chatContainer) return;
+        chatContainer.innerHTML = `
+            <div style="padding: 24px 16px; color: rgba(255,255,255,0.7); text-align: center; font-size: 0.88rem; line-height: 1.5; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+                <i class="fa fa-video-camera" style="font-size: 2.2rem; color: #f5b56a; margin-bottom: 12px;"></i>
+                <p style="margin: 0 0 8px 0; font-weight: 600; color: #fff;">Canal Fuera de Aire</p>
+                <p style="margin: 0;">El chat en vivo se activará automáticamente en cuanto inicie la emisión en YouTube.</p>
+            </div>
+        `;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Caché local del videoId — solo para el CHAT, nunca para el player
+    // ─────────────────────────────────────────────────────────────────────────
     const CACHE_KEY = 'pd_yt_live_id';
     const CACHE_TIME_KEY = 'pd_yt_live_time';
-    const CACHE_DURATION_MS = 30 * 60 * 1000; // 30 minutos de caché (reducido para evitar videos expirados)
+    const CACHE_DURATION_MS = 30 * 60 * 1000; // 30 minutos
 
-    function setLiveUI(activeVideoId) {
-        // Actualizar reproductor solo si es un videoId distinto para evitar recargas innecesarias
-        const targetPlayerSrc = `https://www.youtube.com/embed/${activeVideoId}?autoplay=1`;
-        if (playerIframe.src !== targetPlayerSrc) {
-            playerIframe.src = targetPlayerSrc;
-        }
-
-        if (chatIframe) {
-            const targetChatSrc = `https://www.youtube.com/live_chat?v=${activeVideoId}&embed_domain=${domain}`;
-            if (chatIframe.src !== targetChatSrc) {
-                chatIframe.src = targetChatSrc;
-            }
-        }
-        if (statusEl) statusEl.textContent = 'En Vivo';
-
-        // Guardar en caché para cargas instantáneas posteriores
+    function saveCache(videoId) {
         try {
-            localStorage.setItem(CACHE_KEY, activeVideoId);
+            localStorage.setItem(CACHE_KEY, videoId);
             localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
-        } catch (e) {
-            // Ignorar errores de almacenamiento privado/incógnito
-        }
+        } catch (e) {}
     }
 
     function clearCache() {
@@ -64,44 +91,28 @@
         } catch (e) {}
     }
 
-    function setOfflineUI() {
-        clearCache(); // Limpiar caché si el stream ya no está activo
-        if (playerIframe.src !== fallbackStreamUrl) {
-            playerIframe.src = fallbackStreamUrl;
-        }
-        if (chatContainer) {
-            chatContainer.innerHTML = `
-                <div style="padding: 24px 16px; color: rgba(255,255,255,0.7); text-align: center; font-size: 0.88rem; line-height: 1.5; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
-                    <i class="fa fa-video-camera" style="font-size: 2.2rem; color: #f5b56a; margin-bottom: 12px;"></i>
-                    <p style="margin: 0 0 8px 0; font-weight: 600; color: #fff;">Canal Fuera de Aire</p>
-                    <p style="margin: 0;">El reproductor y chat en vivo se activarán automáticamente en cuanto inicie la emisión en YouTube.</p>
-                </div>
-            `;
-        }
-        if (statusEl) statusEl.textContent = 'Sin directo activo';
-    }
-
-    // 1. Si se especificó videoId manual o por URL, usarlo inmediatamente
-    if (videoId) {
-        setLiveUI(videoId);
-        return;
-    }
-
-    // 2. Intentar cargar desde Caché Local (instantáneo)
-    // Solo si la caché es reciente; el fallback live_stream ya está activo mientras verificamos
+    // Cargar chat desde caché (el player ya está activo con live_stream)
     try {
         const cachedId = localStorage.getItem(CACHE_KEY);
         const cachedTime = parseInt(localStorage.getItem(CACHE_TIME_KEY) || '0', 10);
         if (cachedId && (Date.now() - cachedTime < CACHE_DURATION_MS)) {
-            // Usar caché de forma provisional pero verificar en segundo plano
-            setLiveUI(cachedId);
+            updateChat(cachedId);
+            if (statusEl) statusEl.textContent = 'En Vivo';
         } else if (cachedId) {
-            // Caché expirada: limpiarla para que el fallback live_stream tome control
             clearCache();
+            showOfflineChat();
+        } else {
+            showOfflineChat();
         }
-    } catch (e) {}
+    } catch (e) {
+        showOfflineChat();
+    }
 
-    // 3. Verificación en segundo plano (API Oficial o RSS Proxy)
+    // ─────────────────────────────────────────────────────────────────────────
+    // Detección en segundo plano del videoId — SOLO para el chat
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // Opción A: API oficial de YouTube (si se configuró apiKey en youtube-config.js)
     if (config.apiKey && config.apiKey.trim()) {
         const apiKey = config.apiKey.trim();
         const apiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${apiKey}`;
@@ -110,75 +121,21 @@
             .then(res => res.json())
             .then(data => {
                 if (data.items && data.items.length > 0 && data.items[0].id && data.items[0].id.videoId) {
-                    setLiveUI(data.items[0].id.videoId);
+                    const liveId = data.items[0].id.videoId;
+                    updateChat(liveId);
+                    saveCache(liveId);
+                    if (statusEl) statusEl.textContent = 'En Vivo';
                 } else {
-                    autoDetectRssFeed();
+                    clearCache();
+                    showOfflineChat();
+                    if (statusEl) statusEl.textContent = 'Sin directo activo';
                 }
             })
-            .catch(() => {
-                autoDetectRssFeed();
-            });
+            .catch(() => autoDetectRssFeed());
         return;
     }
 
-    // 4. Auto-detección en segundo plano usando el Feed RSS oficial del canal de YouTube
-    // Verifica con oEmbed si el video detectado está realmente en vivo antes de cambiar el player.
-    function isVideoLive(vid) {
-        return fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${vid}&format=json`)
-            .then(res => {
-                if (!res.ok) return false;
-                return res.json().then(data => {
-                    // Si el título contiene indicadores de directo o el author_name coincide, aceptar.
-                    // YouTube no expone el tipo en oEmbed, así que lo comparamos contra
-                    // la URL canónica live_stream: si el embed live_stream carga este vid, está en vivo.
-                    // Usamos el thumbnail_url: los streams en vivo usan hqdefault mientras están activos.
-                    // La señal más fiable es que el título del live suele cambiar; hacemos una comparación
-                    // ligera comprobando que el video existe (200 OK) y consultando el feed de nuevo.
-                    return true; // El video existe; la validación real la hace el check de "isLive" abajo
-                });
-            })
-            .catch(() => false);
-    }
-
-    function checkAndSetLive(vid) {
-        // Verificar si el video está marcado como en vivo usando la página de oEmbed
-        // YouTube devuelve 401 o error en streams que ya terminaron en algunos casos,
-        // pero la forma más fiable sin API key es intentar el thumbnail maxresdefault
-        // y usar el endpoint /live_redirect que sólo funciona para streams activos.
-        const liveCheckUrl = `https://www.youtube.com/shorts/${vid}`;
-        // Método más confiable disponible sin API key: comparar el vid con el live_stream embed
-        // Si el canal tiene un stream activo, live_stream?channel= redirige a ese vid.
-        // Lo hacemos verificando que el vid del RSS sea diferente al que ya está cargado;
-        // si el fallback live_stream ya cargó bien, preferimos no interferir.
-        // Solo aplicamos setLiveUI si el src actual sigue siendo el fallback (canal genérico).
-        if (playerIframe.src && playerIframe.src.includes('live_stream?channel')) {
-            // El player sigue en modo canal genérico: intentar cambiar al video específico
-            // pero solo si el video fue publicado hace menos de 12 horas (señal de que puede ser live)
-            fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${vid}&format=json`)
-                .then(res => res.ok ? res.json() : null)
-                .then(data => {
-                    if (data) {
-                        // El video existe. Cambiar al embed específico para mejor calidad/control.
-                        setLiveUI(vid);
-                    }
-                    // Si falla o no hay data, mantener el fallback live_stream (funciona bien)
-                })
-                .catch(() => {
-                    // Mantener fallback sin cambios
-                });
-        } else if (playerIframe.src && playerIframe.src.includes(`/embed/${vid}`)) {
-            // Ya está apuntando a este video, no hacer nada
-        } else {
-            // El player apunta a otro video; verificar con oEmbed antes de cambiar
-            fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${vid}&format=json`)
-                .then(res => res.ok ? res.json() : null)
-                .then(data => {
-                    if (data) setLiveUI(vid);
-                })
-                .catch(() => {});
-        }
-    }
-
+    // Opción B: RSS del canal (sin API key) — solo actualiza el chat, NO el player
     function autoDetectRssFeed() {
         const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
         const proxies = [
@@ -188,32 +145,26 @@
 
         function tryProxy(index) {
             if (index >= proxies.length) {
-                // Mantener el fallback live_stream activo (funciona para streams en curso)
-                if (statusEl) statusEl.textContent = 'En Vivo (Canal)';
+                // No se detectó ID. El player sigue activo con live_stream sin interrupciones.
+                if (statusEl) statusEl.textContent = 'En Vivo';
                 return;
             }
 
             fetch(proxies[index])
                 .then(res => res.text())
                 .then(xml => {
-                    // El RSS devuelve todos los videos del canal; el primero es el más reciente
-                    // pero NO necesariamente es el stream en vivo actual.
-                    // Obtenemos todos los IDs y buscamos el stream activo.
-                    const allIds = [...xml.matchAll(/<yt:videoId>([a-zA-Z0-9_-]{11})<\/yt:videoId>/g)]
-                        .map(m => m[1]);
-
-                    if (allIds.length === 0) {
+                    const match = xml.match(/<yt:videoId>([a-zA-Z0-9_-]{11})<\/yt:videoId>/);
+                    if (match && match[1]) {
+                        const detectedId = match[1];
+                        // SOLO actualizar el chat — el player NO se toca
+                        updateChat(detectedId);
+                        saveCache(detectedId);
+                        if (statusEl) statusEl.textContent = 'En Vivo';
+                    } else {
                         tryProxy(index + 1);
-                        return;
                     }
-
-                    // Solo pasar a checkAndSetLive el primer video (más reciente)
-                    // El fallback live_stream sigue activo mientras verificamos
-                    checkAndSetLive(allIds[0]);
                 })
-                .catch(() => {
-                    tryProxy(index + 1);
-                });
+                .catch(() => tryProxy(index + 1));
         }
 
         tryProxy(0);
