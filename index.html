@@ -738,7 +738,7 @@
             <a href="index.html" class="brand-link" title="Poder Deportivo">
                 <img src="images/main-logo.png" alt="Poder Deportivo Logo" class="brand-logo">
                 <div class="brand-text-group">
-                    <span class="brand-title"></span>
+                    <span class="brand-title">Poder Deportivo</span>
                 </div>
             </a>
 
@@ -776,115 +776,114 @@
                     </p>
                 </div>
             </div>
-        </div>
 
-        <!-- LAYOUT EN GRID (VIDEO REPRODUCTOR + CHAT EN VIVO) -->
-        <div class="live-layout">
-            <!-- COLUMNA DEL REPRODUCTOR -->
-            <section class="video-column">
-                <div class="video-header">
-                    <h2 class="video-header-title">
-                        <i class="fa fa-play-circle"></i> Poder Deportivo
-                    </h2>
-                    <span class="video-quality-tag">1080p HD</span>
+            <!-- LAYOUT EN GRID (VIDEO REPRODUCTOR + CHAT EN VIVO) -->
+            <div class="live-layout">
+                <!-- COLUMNA DEL REPRODUCTOR -->
+                <section class="video-column">
+                    <div class="video-header">
+                        <h2 class="video-header-title">
+                            <i class="fa fa-play-circle"></i> Poder Deportivo
+                        </h2>
+                        <span class="video-quality-tag">1080p HD</span>
+                    </div>
+
+                    <div class="video-responsive-container">
+                        <iframe id="yt-player-iframe"
+                            src="https://www.youtube.com/embed/live_stream?channel=UCWjFYIgvyxX6f9s60fo2sxQ&autoplay=1"
+                            title="Transmisión en vivo Poder Deportivo por YouTube"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowfullscreen></iframe>
+                    </div>
+
+                    <div class="stream-actions-bar">
+                        <div class="stream-info-pill">
+                            <i class="fa fa-signal" style="color: #2ecc71;"></i> Signal Status: Óptima
+                        </div>
+                        <div class="stream-share-buttons">
+                            <a href="https://wa.me/?text=MIRA%20PODER%20DEPORTIVO%20EN%20VIVO%20%E2%96%B6%20https://poderdeportivohn.com"
+                                target="_blank" rel="noopener noreferrer" class="share-btn" title="Compartir en WhatsApp">
+                                <i class="fa fa-whatsapp"></i> Compartir
+                            </a>
+                            <a href="https://www.facebook.com/sharer/sharer.php?u=https://poderdeportivohn.com"
+                                target="_blank" rel="noopener noreferrer" class="share-btn" title="Compartir en Facebook">
+                                <i class="fa fa-facebook"></i> Compartir
+                            </a>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- COLUMNA DEL CHAT -->
+                <aside class="chat-column" aria-label="Chat en vivo YouTube">
+                    <div class="chat-header">
+                        <h2><i class="fa fa-youtube-play"></i> Chat del Directo</h2>
+                        <span class="chat-status" id="chat-status">Conectando...</span>
+                    </div>
+                    <div class="chat-iframe-wrapper">
+                        <iframe id="yt-chat-iframe" src="" title="Chat de YouTube en vivo"
+                            style="width: 100%; height: 100%; border: 0;"></iframe>
+                    </div>
+                </aside>
+            </div>
+
+            <!-- TARJETA REPRODUCTOR TUNEIN RADIO -->
+            <section class="radio-section-card">
+                <div class="radio-card-header">
+                    <div class="radio-title-group">
+                        <div class="sound-wave" title="Audio en vivo activo">
+                            <span></span><span></span><span></span><span></span>
+                        </div>
+                        <div>
+                            <h2>Radio Poder Deportivo en Vivo</h2>
+                            <p>Escúchanos desde cualquier dispositivo con la señal oficial de TuneIn</p>
+                        </div>
+                    </div>
+                    <a href="https://tunein.com/radio/Poder-Deportivo-s351615/" target="_blank" rel="noopener noreferrer"
+                        class="share-btn">
+                        <i class="fa fa-external-link"></i> Abrir en TuneIn
+                    </a>
                 </div>
 
-                <div class="video-responsive-container">
-                    <iframe id="yt-player-iframe"
-                        src="https://www.youtube.com/embed/live_stream?channel=UCWjFYIgvyxX6f9s60fo2sxQ&autoplay=1"
-                        title="Transmisión en vivo Poder Deportivo por YouTube"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowfullscreen></iframe>
-                </div>
-
-                <div class="stream-actions-bar">
-                    <div class="stream-info-pill">
-                        <i class="fa fa-signal" style="color: #2ecc71;"></i> Signal Status: Óptima
-                    </div>
-                    <div class="stream-share-buttons">
-                        <a href="https://wa.me/?text=MIRA%20PODER%20DEPORTIVO%20EN%20VIVO%20%E2%96%B6%20https://poderdeportivohn.com"
-                            target="_blank" rel="noopener noreferrer" class="share-btn" title="Compartir en WhatsApp">
-                            <i class="fa fa-whatsapp"></i> Compartir
-                        </a>
-                        <a href="https://www.facebook.com/sharer/sharer.php?u=https://poderdeportivohn.com"
-                            target="_blank" rel="noopener noreferrer" class="share-btn" title="Compartir en Facebook">
-                            <i class="fa fa-facebook"></i> Compartir
-                        </a>
-                    </div>
+                <div class="tunein-iframe-container">
+                    <iframe src="https://tunein.com/embed/player/s351615/" title="Reproductor TuneIn"
+                        style="width:100%; height:100px; border:0;"></iframe>
                 </div>
             </section>
 
-            <!-- COLUMNA DEL CHAT -->
-            <aside class="chat-column" aria-label="Chat en vivo YouTube">
-                <div class="chat-header">
-                    <h2><i class="fa fa-youtube-play"></i> Chat del Directo</h2>
-                    <span class="chat-status" id="chat-status">Conectando...</span>
-                </div>
-                <div class="chat-iframe-wrapper">
-                    <iframe id="yt-chat-iframe" src="" title="Chat de YouTube en vivo"
-                        style="width: 100%; height: 100%; border: 0;"></iframe>
-                </div>
-            </aside>
-        </div>
-
-        <!-- TARJETA REPRODUCTOR TUNEIN RADIO -->
-        <section class="radio-section-card">
-            <div class="radio-card-header">
-                <div class="radio-title-group">
-                    <div class="sound-wave" title="Audio en vivo activo">
-                        <span></span><span></span><span></span><span></span>
+            <!-- TARJETAS INTERACTIVAS DE REDES SOCIALES -->
+            <section class="social-cards-grid">
+                <a href="https://wa.me/50431600088" target="_blank" rel="noopener noreferrer" class="social-card whatsapp">
+                    <div class="social-card-icon" style="background: rgba(37, 211, 102, 0.2); color: #25d366;">
+                        <i class="fa fa-whatsapp"></i>
                     </div>
-                    <div>
-                        <h2>Radio Poder Deportivo en Vivo</h2>
-                        <p>Escúchanos desde cualquier dispositivo con la señal oficial de TuneIn</p>
+                    <div class="social-card-info">
+                        <h3>WhatsApp Oficial</h3>
+                        <p>Envíanos tus comentarios y saludos en directo</p>
                     </div>
-                </div>
-                <a href="https://tunein.com/radio/Poder-Deportivo-s351615/" target="_blank" rel="noopener noreferrer"
-                    class="share-btn">
-                    <i class="fa fa-external-link"></i> Abrir en TuneIn
                 </a>
-            </div>
 
-            <div class="tunein-iframe-container">
-                <iframe src="https://tunein.com/embed/player/s351615/" title="Reproductor TuneIn"
-                    style="width:100%; height:100px; border:0;"></iframe>
-            </div>
-        </section>
+                <a href="https://www.facebook.com/poderdeportivohn" target="_blank" rel="noopener noreferrer"
+                    class="social-card facebook">
+                    <div class="social-card-icon" style="background: rgba(24, 119, 242, 0.2); color: #1877f2;">
+                        <i class="fa fa-facebook"></i>
+                    </div>
+                    <div class="social-card-info">
+                        <h3>Facebook Page</h3>
+                        <p>Síguenos para más noticias y transmisiones</p>
+                    </div>
+                </a>
 
-        <!-- TARJETAS INTERACTIVAS DE REDES SOCIALES -->
-        <section class="social-cards-grid">
-            <a href="https://wa.me/50431600088" target="_blank" rel="noopener noreferrer" class="social-card whatsapp">
-                <div class="social-card-icon" style="background: rgba(37, 211, 102, 0.2); color: #25d366;">
-                    <i class="fa fa-whatsapp"></i>
-                </div>
-                <div class="social-card-info">
-                    <h3>WhatsApp Oficial</h3>
-                    <p>Envíanos tus comentarios y saludos en directo</p>
-                </div>
-            </a>
-
-            <a href="https://www.facebook.com/poderdeportivohn" target="_blank" rel="noopener noreferrer"
-                class="social-card facebook">
-                <div class="social-card-icon" style="background: rgba(24, 119, 242, 0.2); color: #1877f2;">
-                    <i class="fa fa-facebook"></i>
-                </div>
-                <div class="social-card-info">
-                    <h3>Facebook Page</h3>
-                    <p>Síguenos para más noticias y transmisiones</p>
-                </div>
-            </a>
-
-            <a href="https://tunein.com/radio/Poder-Deportivo-s351615/" target="_blank" rel="noopener noreferrer"
-                class="social-card">
-                <div class="social-card-icon" style="background: rgba(243, 108, 0, 0.2); color: #f36c00;">
-                    <i class="fa fa-play-circle"></i>
-                </div>
-                <div class="social-card-info">
-                    <h3>TuneIn Radio</h3>
-                    <p>Sintoniza la señal de radio las 24 horas</p>
-                </div>
-            </a>
-        </section>
+                <a href="https://tunein.com/radio/Poder-Deportivo-s351615/" target="_blank" rel="noopener noreferrer"
+                    class="social-card">
+                    <div class="social-card-icon" style="background: rgba(243, 108, 0, 0.2); color: #f36c00;">
+                        <i class="fa fa-play-circle"></i>
+                    </div>
+                    <div class="social-card-info">
+                        <h3>TuneIn Radio</h3>
+                        <p>Sintoniza la señal de radio las 24 horas</p>
+                    </div>
+                </a>
+            </section>
 
         </div>
     </main>
