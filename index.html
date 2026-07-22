@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<!--[if IE 8 ]><html class="no-js oldie ie8" lang="en"> <![endif]-->
-<!--[if IE 9 ]><html class="no-js oldie ie9" lang="en"> <![endif]-->
+<!--[if IE 8 ]><html class="no-js oldie ie8" lang="es"> <![endif]-->
+<!--[if IE 9 ]><html class="no-js oldie ie9" lang="es"> <![endif]-->
 <!--[if (gte IE 9)|!(IE)]><!--><html class="no-js" lang="es">
 <!--<![endif]-->
 <head>
@@ -8,191 +8,349 @@
    <!--- basic page needs
    ================================================== -->
    <meta charset="utf-8">
-	<title>Poder Deportivo</title>
-	<meta name="description" content="Poder Deportivo HN - Transmisiones en vivo y noticias deportivas.">
+	<title>Poder Deportivo HN - Transmisión en Vivo y Radio</title>
+	<meta name="description" content="Poder Deportivo HN - Transmisiones deportivas en vivo por televisión y radio. Noticias y cobertura en directo desde Honduras.">
 	<meta name="author" content="Poder Deportivo HN">
 
    <!-- mobile specific metas
    ================================================== -->
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
- 	<!-- CSS (Se mantienen los enlaces a tus archivos CSS existentes)
+   <!-- Google Fonts -->
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+   <!-- CSS
    ================================================== -->
    <link rel="stylesheet" href="css/base.css">
    <link rel="stylesheet" href="css/main.css">
    <link rel="stylesheet" href="css/vendor.css">
-   <!-- Enlace a una versión más reciente de Font Awesome para asegurar que todos los íconos se muestren -->
    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
-
    <style>
-        /* Estilos personalizados para el nuevo diseño minimalista */
+        /* ==========================================================================
+           DISEÑO ULTRA-MODERNO PODER DEPORTIVO HN
+           ========================================================================== */
+
+        :root {
+            --primary-orange: #f36c00;
+            --primary-orange-glow: rgba(243, 108, 0, 0.4);
+            --secondary-orange: #d84315;
+            --dark-bg: #070a12;
+            --glass-card-bg: rgba(13, 18, 30, 0.78);
+            --glass-card-border: rgba(255, 255, 255, 0.12);
+            --glass-card-glow: rgba(243, 108, 0, 0.15);
+            --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
         body {
             display: flex;
             flex-direction: column;
-            min-height: 100vh; /* Asegura que el body ocupe toda la altura de la ventana */
+            min-height: 100vh;
             margin: 0;
-            /* El color de fondo del body ya está definido en main.css */
-            color: #fff; /* Color de texto por defecto para nuevos elementos */
-            background-image: url('images/slides/slide-1.jpg');
+            padding: 0;
+            font-family: var(--font-body);
+            color: #ffffff;
+            /* Se mantiene exactamente la imagen de fondo actual con una elegante viñeta oscura */
+            background: linear-gradient(180deg, rgba(7, 10, 18, 0.85) 0%, rgba(11, 15, 26, 0.90) 100%), url('images/slides/slide-1.jpg');
             background-size: cover;
             background-position: center center;
             background-repeat: no-repeat;
             background-attachment: fixed;
+            -webkit-font-smoothing: antialiased;
         }
 
+        /* --- NAVBAR SUPERIOR MODERNO --- */
+        .header-navbar {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(10, 14, 25, 0.82);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 12px 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .header-container {
+            max-width: 1320px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand-link {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+            color: #fff;
+        }
+
+        .brand-logo {
+            height: 46px;
+            width: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+            transition: transform 0.3s ease;
+        }
+
+        .brand-link:hover .brand-logo {
+            transform: scale(1.05);
+        }
+
+        .brand-text-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-title {
+            font-family: var(--font-heading);
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            line-height: 1.1;
+            margin: 0;
+            background: linear-gradient(135deg, #ffffff 0%, #ffc107 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        .brand-subtitle {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-orange);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        /* Indicador En Vivo Pulsante */
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(231, 76, 60, 0.15);
+            border: 1px solid rgba(231, 76, 60, 0.4);
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-family: var(--font-heading);
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #ff5252;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.2);
+        }
+
+        .pulse-dot-ring {
+            position: relative;
+            width: 10px;
+            height: 10px;
+        }
+
+        .pulse-dot-ring::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            background: #ff5252;
+            opacity: 0.75;
+            animation: pulseRing 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+
+        .pulse-dot-core {
+            width: 10px;
+            height: 10px;
+            background: #ff5252;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #ff5252;
+        }
+
+        @keyframes pulseRing {
+            0% { transform: scale(0.6); opacity: 0.9; }
+            100% { transform: scale(2.2); opacity: 0; }
+        }
+
+        .nav-social-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-nav-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-decoration: none;
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            transition: all 0.25s ease;
+        }
+
+        .btn-nav-action:hover {
+            background: rgba(243, 108, 0, 0.2);
+            border-color: var(--primary-orange);
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px var(--primary-orange-glow);
+        }
+
+        .btn-nav-action.whatsapp:hover {
+            background: rgba(37, 211, 102, 0.2);
+            border-color: #25d366;
+            box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+        }
+
+        /* --- ÁREA PRINCIPAL DE CONTENIDO --- */
         .content-area {
             display: flex;
-            justify-content: center;
-            align-items: stretch;
-            flex-grow: 1; /* Hace que esta área ocupe el espacio disponible */
-            padding: 20px; /* Espaciado alrededor del contenedor del video */
-            box-sizing: border-box; /* Incluye el padding en el tamaño total del elemento */
+            flex-direction: column;
+            align-items: center;
+            flex-grow: 1;
+            padding: 24px 20px 40px 20px;
+            box-sizing: border-box;
+            width: 100%;
         }
 
+        .main-wrapper {
+            width: min(1320px, 100%);
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Título del Hero / Stream */
+        .hero-title-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 16px;
+            background: rgba(13, 18, 30, 0.6);
+            backdrop-filter: blur(12px);
+            padding: 18px 24px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .hero-title-group h1 {
+            font-family: var(--font-heading);
+            font-size: 2.6rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin: 0 0 4px 0;
+            line-height: 1.2;
+        }
+
+        .hero-title-group h1 span {
+            color: var(--primary-orange);
+        }
+
+        .hero-title-group p {
+            font-size: 1.3rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin: 0;
+        }
+
+        .hero-badge-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #ffd166;
+            background: rgba(255, 209, 102, 0.12);
+            border: 1px solid rgba(255, 209, 102, 0.25);
+            padding: 6px 12px;
+            border-radius: 8px;
+        }
+
+        /* --- GRID PRINCIPAL (VIDEO + CHAT) --- */
         .live-layout {
-            width: min(1280px, 100%);
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 360px;
-            gap: 18px;
+            grid-template-columns: minmax(0, 1fr) 380px;
+            gap: 20px;
             align-items: stretch;
         }
 
         .video-column,
         .chat-column {
-            background: rgba(8, 12, 22, 0.78);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 16px;
-            box-shadow: 0 18px 48px rgba(0,0,0,0.35);
-            backdrop-filter: blur(8px);
+            background: var(--glass-card-bg);
+            border: 1px solid var(--glass-card-border);
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 25px var(--glass-card-glow);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             overflow: hidden;
+            transition: border-color 0.3s ease;
+        }
+
+        .video-column:hover,
+        .chat-column:hover {
+            border-color: rgba(243, 108, 0, 0.35);
         }
 
         .video-column {
-            padding: 14px;
-        }
-
-        .chat-column {
             display: flex;
             flex-direction: column;
-            height: min(70vh, 720px);
-            min-height: 520px;
-            max-height: 720px;
+            padding: 16px;
         }
 
-        .chat-header {
-            padding: 14px 16px;
-            background: rgba(255, 255, 255, 0.05);
-            border-bottom: 1px solid rgba(255,255,255,0.08);
+        .video-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 10px;
+            padding-bottom: 14px;
+            margin-bottom: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        .chat-header h2 {
-            margin: 0;
-            font-size: 1rem;
-            color: #fff;
-        }
-
-        .chat-status {
-            font-size: 0.8rem;
-            color: #f7f7f7;
-            border-radius: 999px;
-            padding: 4px 10px;
-            background: rgba(255,255,255,0.12);
-        }
-
-        .chat-status.online {
-            background: rgba(46, 204, 113, 0.2);
-            color: #8df3b5;
-        }
-
-        .chat-messages {
-            flex: 1;
-            min-height: 0;
-            padding: 12px;
-            overflow-y: auto;
+        .video-header-title {
             display: flex;
-            flex-direction: column;
+            align-items: center;
             gap: 10px;
-        }
-
-        .chat-message {
-            background: rgba(255,255,255,0.05);
-            border-radius: 12px;
-            padding: 10px 12px;
-        }
-
-        .chat-message-meta {
-            font-size: 0.74rem;
-            color: #f5b56a;
-            margin-bottom: 4px;
-        }
-
-        .chat-message-content {
-            font-size: 0.9rem;
-            color: #fff;
-            line-height: 1.35;
-            word-break: break-word;
-        }
-
-        .chat-form {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
-            padding: 12px;
-            border-top: 1px solid rgba(255,255,255,0.08);
-            background: rgba(0,0,0,0.2);
-        }
-
-        .chat-form input {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid rgba(255,255,255,0.14);
-            background: rgba(255,255,255,0.08);
-            color: #fff;
-            border-radius: 10px;
-            box-sizing: border-box;
-        }
-
-        .chat-form input::placeholder {
-            color: rgba(255,255,255,0.6);
-        }
-
-        .chat-form button {
-            border: 0;
-            border-radius: 10px;
-            background: #c25d02;
-            color: #fff;
-            padding: 11px 14px;
+            font-family: var(--font-heading);
+            font-size: 1.6rem;
             font-weight: 700;
-            cursor: pointer;
+            color: #fff;
+            margin: 0;
         }
 
-        .chat-form button:hover {
-            background: #d56e08;
+        .video-header-title i {
+            color: var(--primary-orange);
+            font-size: 1.8rem;
         }
 
-        @media (max-width: 980px) {
-            .live-layout {
-                grid-template-columns: 1fr;
-            }
-
-            .chat-column {
-                height: 420px;
-                min-height: 420px;
-                max-height: 420px;
-            }
+        .video-quality-tag {
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 6px;
+            letter-spacing: 0.5px;
         }
 
         .video-responsive-container {
             position: relative;
             width: 100%;
             aspect-ratio: 16 / 9;
-            min-height: 320px;
-            background: #000;
+            min-height: 340px;
+            background: #000000;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
         }
 
         .video-responsive-container iframe {
@@ -203,178 +361,517 @@
             border: 0;
         }
 
-        footer {
-            padding: 20px;
-            text-align: center;
-            background-color: #1111112d; /* Fondo más oscuro para el pie de página */
-            color: rgba(255, 255, 255, 0.5);
-        }
-
-        .social-links-footer ul {
-            list-style: none;
-            padding: 0;
-            margin: 0 0 10px 0;
+        /* Barra de acciones bajo el reproductor */
+        .stream-actions-bar {
             display: flex;
-            justify-content: center;
-            gap: 20px; /* Espacio entre los íconos sociales */
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        .social-links-footer ul li {
-            display: inline-block;
+        .stream-info-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.7);
         }
 
-        .social-links-footer a {
-            color: #fff;
-            font-size: 2.5rem; /* Íconos más grandes */
+        .stream-share-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .share-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: 600;
             text-decoration: none;
+            color: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s ease;
         }
 
-        .social-links-footer a:hover {
-            color: #c25d02; /* Color hover de main.css */
+        .share-btn:hover {
+            background: var(--primary-orange);
+            color: #fff;
+            border-color: var(--primary-orange);
         }
 
-        .footer-bottom-links ul {
-            list-style: none;
-            padding: 0;
+        /* --- CHAT COLUMN --- */
+        .chat-column {
+            display: flex;
+            flex-direction: column;
+            height: min(76vh, 760px);
+            min-height: 540px;
+        }
+
+        .chat-header {
+            padding: 16px 18px;
+            background: rgba(255, 255, 255, 0.04);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-header h2 {
+            margin: 0;
+            font-family: var(--font-heading);
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chat-header h2 i {
+            color: #ff0000;
+        }
+
+        .chat-status {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #8df3b5;
+            border-radius: 999px;
+            padding: 4px 12px;
+            background: rgba(46, 204, 113, 0.15);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+
+        .chat-iframe-wrapper {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            background: rgba(5, 8, 15, 0.6);
+        }
+
+        /* --- SECCIÓN SEPARADA PARA TUNEIN RADIO --- */
+        .radio-section-card {
+            background: var(--glass-card-bg);
+            border: 1px solid var(--glass-card-border);
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .radio-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 12px;
+        }
+
+        .radio-title-group {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        /* Animación Ecualizador de Audio */
+        .sound-wave {
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            height: 20px;
+        }
+
+        .sound-wave span {
+            width: 3px;
+            height: 100%;
+            background: var(--primary-orange);
+            border-radius: 3px;
+            animation: wave 1.2s ease-in-out infinite alternate;
+        }
+
+        .sound-wave span:nth-child(2) { animation-delay: 0.2s; }
+        .sound-wave span:nth-child(3) { animation-delay: 0.4s; }
+        .sound-wave span:nth-child(4) { animation-delay: 0.6s; }
+
+        @keyframes wave {
+            0% { height: 4px; }
+            100% { height: 20px; }
+        }
+
+        .radio-title-group h2 {
+            font-family: var(--font-heading);
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffffff;
             margin: 0;
         }
 
-        .footer-bottom-links ul li {
-            display: inline-block;
+        .radio-title-group p {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin: 0;
         }
 
-        .footer-bottom-links a {
-            color: rgba(255, 255, 255, 0.5);
+        .tunein-iframe-container {
+            width: 100%;
+            height: 100px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* --- TARJETAS DE REDES SOCIALES --- */
+        .social-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        .social-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
             text-decoration: none;
+            color: #ffffff;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
-        .footer-bottom-links a:hover {
-            color: #c25d02;
+        .social-card:hover {
+            background: rgba(243, 108, 0, 0.15);
+            border-color: var(--primary-orange);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(243, 108, 0, 0.25);
+            color: #ffffff;
+        }
+
+        .social-card.whatsapp:hover {
+            background: rgba(37, 211, 102, 0.15);
+            border-color: #25d366;
+            box-shadow: 0 10px 25px rgba(37, 211, 102, 0.25);
+        }
+
+        .social-card.facebook:hover {
+            background: rgba(24, 119, 242, 0.15);
+            border-color: #1877f2;
+            box-shadow: 0 10px 25px rgba(18, 119, 242, 0.25);
+        }
+
+        .social-card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            color: #ffffff;
+        }
+
+        .social-card-info h3 {
+            font-family: var(--font-heading);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 0 2px 0;
+        }
+
+        .social-card-info p {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin: 0;
+        }
+
+        /* --- FOOTER MODERNO --- */
+        footer {
+            margin-top: 40px;
+            padding: 30px 20px;
+            background: rgba(5, 8, 15, 0.9);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            text-align: center;
+        }
+
+        .footer-content {
+            max-width: 1320px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.65);
+            text-decoration: none;
+            font-size: 1.3rem;
+            transition: color 0.2s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-orange);
         }
 
         .credits-footer {
-            margin-top: 10px;
-            font-size: 0.9rem;
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.4);
+            margin: 0;
         }
 
         .credits-footer a {
-            color: rgba(255, 255, 255, 0.3);
+            color: var(--primary-orange);
             text-decoration: none;
+            font-weight: 600;
         }
 
-        .credits-footer a:hover {
-            color: #c25d02;
+        /* --- MEDIA QUERIES RESPONSIVAS --- */
+        @media (max-width: 1024px) {
+            .live-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .chat-column {
+                height: 480px;
+                min-height: 480px;
+            }
         }
 
-        /* Clase de accesibilidad para ocultar texto visualmente */
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border-width: 0;
+        @media (max-width: 640px) {
+            .header-navbar {
+                padding: 10px 14px;
+            }
+
+            .brand-logo {
+                height: 36px;
+            }
+
+            .brand-title {
+                font-size: 1.8rem;
+            }
+
+            .brand-subtitle {
+                font-size: 0.9rem;
+            }
+
+            .nav-social-actions .btn-text {
+                display: none;
+            }
+
+            .hero-title-bar {
+                padding: 14px 16px;
+            }
+
+            .hero-title-group h1 {
+                font-size: 2rem;
+            }
+
+            .content-area {
+                padding: 16px 12px 30px 12px;
+            }
         }
-
-        .social-links-main {
-            text-align: center;
-            padding: 20px 0;
-        }
-
-        .social-links-main ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: inline-flex; /* Usa inline-flex para que el contenedor se ajuste al contenido */
-            justify-content: center;
-            gap: 25px; /* Espacio entre los íconos */
-        }
-
-        .social-links-main ul li {
-            display: inline-block;
-        }
-
-        .social-links-main a {
-            color: #fff;
-            font-size: 3rem; /* Íconos un poco más grandes */
-            text-decoration: none;
-            transition: color 0.3s ease; /* Transición suave para el color */
-        }
-
-        .social-links-main a:hover {
-            color: #c25d02; /* Mismo color hover que en el footer */
-        }
-
-
    </style>
 
-   <!-- script
-   ================================================== -->
-	<script src="js/modernizr.js"></script>
-
-   <!-- favicons
-    ================================================== -->
-	<link rel="icon" type="image/png" href="favicon.png">
+   <script src="js/modernizr.js"></script>
+   <link rel="icon" type="image/png" href="favicon.png">
 
 </head>
 
 <body>
 
-    <!-- Área principal de contenido para el reproductor de video de YouTube y Chat -->
-    <div class="content-area">
-        <div class="live-layout">
-            <div class="video-column">
-                <div class="video-responsive-container">
-                    <iframe id="yt-player-iframe" src="https://www.youtube.com/embed/live_stream?channel=UCWjFYIgvyxX6f9s60fo2sxQ&autoplay=1" title="Transmisión en vivo Poder Deportivo por YouTube" style="border:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    <!-- NAVBAR SUPERIOR GLASSMORPHISM -->
+    <header class="header-navbar">
+        <div class="header-container">
+            <a href="index.html" class="brand-link" title="Poder Deportivo HN">
+                <img src="images/main-logo.png" alt="Poder Deportivo Logo" class="brand-logo">
+                <div class="brand-text-group">
+                    <span class="brand-title">Poder Deportivo</span>
+                    <span class="brand-subtitle">Honduras</span>
+                </div>
+            </a>
+
+            <div class="live-badge" title="Canal transmitiendo en vivo">
+                <div class="pulse-dot-ring">
+                    <div class="pulse-dot-core"></div>
+                </div>
+                <span>EN VIVO</span>
+            </div>
+
+            <div class="nav-social-actions">
+                <a href="https://wa.me/50431600088" target="_blank" rel="noopener noreferrer" class="btn-nav-action whatsapp" aria-label="WhatsApp">
+                    <i class="fa fa-whatsapp"></i>
+                    <span class="btn-text">WhatsApp</span>
+                </a>
+                <a href="https://www.facebook.com/poderdeportivohn" target="_blank" rel="noopener noreferrer" class="btn-nav-action" aria-label="Facebook">
+                    <i class="fa fa-facebook"></i>
+                    <span class="btn-text">Facebook</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ÁREA PRINCIPAL DE CONTENIDO -->
+    <main class="content-area">
+        <div class="main-wrapper">
+            
+            <!-- BANNER / TÍTULO DE LA TRANSMISIÓN -->
+            <div class="hero-title-bar">
+                <div class="hero-title-group">
+                    <h1>Señal en Directo <span>TV & Radio</span></h1>
+                    <p>Transmitiendo lo mejor del deporte hondureño e internacional</p>
+                </div>
+                <div class="hero-badge-tag">
+                    <i class="fa fa-television"></i> Transmisión Oficial HD
                 </div>
             </div>
 
-            <aside class="chat-column" aria-label="Chat en vivo YouTube">
-                <div class="chat-header">
-                    <h2>Chat en vivo YouTube</h2>
-                    <span class="chat-status" id="chat-status">Conectando...</span>
+            <!-- LAYOUT EN GRID (VIDEO REPRODUCTOR + CHAT EN VIVO) -->
+            <div class="live-layout">
+                <!-- COLUMNA DEL REPRODUCTOR -->
+                <section class="video-column">
+                    <div class="video-header">
+                        <h2 class="video-header-title">
+                            <i class="fa fa-play-circle"></i> Poder Deportivo TV
+                        </h2>
+                        <span class="video-quality-tag">1080p HD</span>
+                    </div>
+
+                    <div class="video-responsive-container">
+                        <iframe id="yt-player-iframe" src="https://www.youtube.com/embed/live_stream?channel=UCWjFYIgvyxX6f9s60fo2sxQ&autoplay=1" title="Transmisión en vivo Poder Deportivo por YouTube" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                    </div>
+
+                    <div class="stream-actions-bar">
+                        <div class="stream-info-pill">
+                            <i class="fa fa-signal" style="color: #2ecc71;"></i> Signal Status: Óptima
+                        </div>
+                        <div class="stream-share-buttons">
+                            <a href="https://wa.me/?text=MIRA%20PODER%20DEPORTIVO%20EN%20VIVO%20%E2%96%B6%20https://poderdeportivohn.com" target="_blank" rel="noopener noreferrer" class="share-btn" title="Compartir en WhatsApp">
+                                <i class="fa fa-whatsapp"></i> Compartir
+                            </a>
+                            <a href="https://www.facebook.com/sharer/sharer.php?u=https://poderdeportivohn.com" target="_blank" rel="noopener noreferrer" class="share-btn" title="Compartir en Facebook">
+                                <i class="fa fa-facebook"></i> Compartir
+                            </a>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- COLUMNA DEL CHAT -->
+                <aside class="chat-column" aria-label="Chat en vivo YouTube">
+                    <div class="chat-header">
+                        <h2><i class="fa fa-youtube-play"></i> Chat del Directo</h2>
+                        <span class="chat-status" id="chat-status">Conectando...</span>
+                    </div>
+                    <div class="chat-iframe-wrapper">
+                        <iframe id="yt-chat-iframe" src="" title="Chat de YouTube en vivo" style="width: 100%; height: 100%; border: 0;"></iframe>
+                    </div>
+                </aside>
+            </div>
+
+            <!-- TARJETA REPRODUCTOR TUNEIN RADIO -->
+            <section class="radio-section-card">
+                <div class="radio-card-header">
+                    <div class="radio-title-group">
+                        <div class="sound-wave" title="Audio en vivo activo">
+                            <span></span><span></span><span></span><span></span>
+                        </div>
+                        <div>
+                            <h2>Radio Poder Deportivo en Vivo</h2>
+                            <p>Escúchanos desde cualquier dispositivo con la señal oficial de TuneIn</p>
+                        </div>
+                    </div>
+                    <a href="https://tunein.com/radio/Poder-Deportivo-s351615/" target="_blank" rel="noopener noreferrer" class="share-btn">
+                        <i class="fa fa-external-link"></i> Abrir en TuneIn
+                    </a>
                 </div>
-                <div style="flex: 1; width: 100%; height: 100%; min-height: 0;">
-                    <iframe id="yt-chat-iframe" src="" title="Chat de YouTube en vivo" style="width: 100%; height: 100%; border: 0;"></iframe>
+
+                <div class="tunein-iframe-container">
+                    <iframe src="https://tunein.com/embed/player/s351615/" title="Reproductor TuneIn" style="width:100%; height:100px; border:0;"></iframe>
                 </div>
-            </aside>
+            </section>
+
+            <!-- TARJETAS INTERACTIVAS DE REDES SOCIALES -->
+            <section class="social-cards-grid">
+                <a href="https://wa.me/50431600088" target="_blank" rel="noopener noreferrer" class="social-card whatsapp">
+                    <div class="social-card-icon" style="background: rgba(37, 211, 102, 0.2); color: #25d366;">
+                        <i class="fa fa-whatsapp"></i>
+                    </div>
+                    <div class="social-card-info">
+                        <h3>WhatsApp Oficial</h3>
+                        <p>Envíanos tus comentarios y saludos en directo</p>
+                    </div>
+                </a>
+
+                <a href="https://www.facebook.com/poderdeportivohn" target="_blank" rel="noopener noreferrer" class="social-card facebook">
+                    <div class="social-card-icon" style="background: rgba(24, 119, 242, 0.2); color: #1877f2;">
+                        <i class="fa fa-facebook"></i>
+                    </div>
+                    <div class="social-card-info">
+                        <h3>Facebook Page</h3>
+                        <p>Síguenos para más noticias y transmisiones</p>
+                    </div>
+                </a>
+
+                <a href="https://tunein.com/radio/Poder-Deportivo-s351615/" target="_blank" rel="noopener noreferrer" class="social-card">
+                    <div class="social-card-icon" style="background: rgba(243, 108, 0, 0.2); color: #f36c00;">
+                        <i class="fa fa-play-circle"></i>
+                    </div>
+                    <div class="social-card-info">
+                        <h3>TuneIn Radio</h3>
+                        <p>Sintoniza la señal de radio las 24 horas</p>
+                    </div>
+                </a>
+            </section>
+
         </div>
-    </div>
+    </main>
 
-	<!-- tunein player -->
-	<iframe src="https://tunein.com/embed/player/s351615/" title="Reproductor TuneIn" style="width:100%; height:100px; border:0;"></iframe>
-
-    <!-- Enlaces a redes sociales debajo del video -->
-    <div class="social-links-main">
-        <ul>
-            <li><a href="https://www.facebook.com/poderdeportivohn" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fa fa-facebook"></i><span class="sr-only">Facebook</span></a></li>
-            <li><a href="https://wa.me/50431600088" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><i class="fa fa-whatsapp"></i><span class="sr-only">Contactar por WhatsApp</span></a></li>
-            <li><a href="https://tunein.com/radio/Poder-Deportivo-s351615/" target="_blank" rel="noopener noreferrer" aria-label="TuneIn"><i class="fa fa-play-circle"></i><span class="sr-only">Escuchar en TuneIn</span></a></li>
-        </ul>
-    </div>
-
-    <!-- Sección del pie de página -->
+    <!-- PIE DE PÁGINA -->
     <footer>
-        <div class="footer-bottom-links">
-            <ul>
-                <li><a href="https://wa.me/50431453004?text=Hay%20problemas%20con%20la%20pagina%20de%20poderdeportivohn.com" target="_blank" rel="noopener noreferrer">Reportar problemas</a></li>
-                <li><a href="policy/PrivacyPolicy.html" target="_blank" rel="noopener noreferrer">Política de Privacidad</a></li>
+        <div class="footer-content">
+            <ul class="footer-links">
+                <li><a href="https://wa.me/50431453004?text=Hay%20problemas%20con%20la%20pagina%20de%20poderdeportivohn.com" target="_blank" rel="noopener noreferrer"><i class="fa fa-exclamation-triangle"></i> Reportar problemas</a></li>
+                <li><a href="policy/PrivacyPolicy.html" target="_blank" rel="noopener noreferrer"><i class="fa fa-shield"></i> Política de Privacidad</a></li>
             </ul>
-        </div>
-        <div class="credits-footer">
-            <p>Design by <a href="https://www.xatruchtech.com/" target="_blank" rel="noopener noreferrer" title="Xatruch Tech">Xatruch Tech</a></p>
+            <p class="credits-footer">
+                &copy; Poder Deportivo HN. Design by <a href="https://www.xatruchtech.com/" target="_blank" rel="noopener noreferrer" title="Xatruch Tech">Xatruch Tech</a>
+            </p>
         </div>
     </footer>
 
+   <!-- PRELOADER -->
    <div id="preloader"> 
     	<div id="loader"></div>
    </div> 
 
-   <!-- Java Script
-   ================================================== --> 
+   <!-- SCRIPTS --> 
    <script src="js/jquery-2.1.3.min.js"></script>
    <script src="js/plugins.js"></script>
    <script src="js/main.js"></script>
@@ -382,6 +879,4 @@
    <script src="youtube-live.js"></script>
 
 </body>
-
 </html>
-
