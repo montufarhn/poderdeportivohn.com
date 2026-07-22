@@ -23,16 +23,44 @@
     const channelId = (config.channelId || 'UCWjFYIgvyxX6f9s60fo2sxQ').trim();
     let videoId = (urlVideoId || config.videoId || '').trim();
 
+    // 0. CARGA ULTRA-RÁPIDA: Si el reproductor no tiene src, asignar inmediatamente el stream del canal
+    const fallbackStreamUrl = `https://www.youtube.com/embed/live_stream?channel=${channelId}&autoplay=1`;
+    if (!playerIframe.src || playerIframe.src === '' || playerIframe.src === window.location.href) {
+        playerIframe.src = fallbackStreamUrl;
+    }
+
+    const CACHE_KEY = 'pd_yt_live_id';
+    const CACHE_TIME_KEY = 'pd_yt_live_time';
+    const CACHE_DURATION_MS = 2 * 60 * 60 * 1000; // 2 horas de caché
+
     function setLiveUI(activeVideoId) {
-        playerIframe.src = `https://www.youtube.com/embed/${activeVideoId}?autoplay=1`;
+        // Actualizar reproductor solo si es un videoId distinto para evitar recargas innecesarias
+        const targetPlayerSrc = `https://www.youtube.com/embed/${activeVideoId}?autoplay=1`;
+        if (playerIframe.src !== targetPlayerSrc) {
+            playerIframe.src = targetPlayerSrc;
+        }
+
         if (chatIframe) {
-            chatIframe.src = `https://www.youtube.com/live_chat?v=${activeVideoId}&embed_domain=${domain}`;
+            const targetChatSrc = `https://www.youtube.com/live_chat?v=${activeVideoId}&embed_domain=${domain}`;
+            if (chatIframe.src !== targetChatSrc) {
+                chatIframe.src = targetChatSrc;
+            }
         }
         if (statusEl) statusEl.textContent = 'En Vivo';
+
+        // Guardar en caché para cargas instantáneas posteriores
+        try {
+            localStorage.setItem(CACHE_KEY, activeVideoId);
+            localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
+        } catch (e) {
+            // Ignorar errores de almacenamiento privado/incógnito
+        }
     }
 
     function setOfflineUI() {
-        playerIframe.src = `https://www.youtube.com/embed/live_stream?channel=${channelId}`;
+        if (playerIframe.src !== fallbackStreamUrl) {
+            playerIframe.src = fallbackStreamUrl;
+        }
         if (chatContainer) {
             chatContainer.innerHTML = `
                 <div style="padding: 24px 16px; color: rgba(255,255,255,0.7); text-align: center; font-size: 0.88rem; line-height: 1.5; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
@@ -51,7 +79,16 @@
         return;
     }
 
-    // 2. Si se proporcionó una clave de API oficial (apiKey), consultar la API de YouTube
+    // 2. Intentar cargar desde Caché Local (instantáneo)
+    try {
+        const cachedId = localStorage.getItem(CACHE_KEY);
+        const cachedTime = parseInt(localStorage.getItem(CACHE_TIME_KEY) || '0', 10);
+        if (cachedId && (Date.now() - cachedTime < CACHE_DURATION_MS)) {
+            setLiveUI(cachedId);
+        }
+    } catch (e) {}
+
+    // 3. Verificación en segundo plano (API Oficial o RSS Proxy)
     if (config.apiKey && config.apiKey.trim()) {
         const apiKey = config.apiKey.trim();
         const apiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${apiKey}`;
@@ -71,7 +108,7 @@
         return;
     }
 
-    // 3. Auto-detección del videoId usando el Feed RSS oficial del canal de YouTube
+    // 4. Auto-detección en segundo plano usando el Feed RSS oficial del canal de YouTube
     function autoDetectRssFeed() {
         const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
         const proxies = [
@@ -81,7 +118,8 @@
 
         function tryProxy(index) {
             if (index >= proxies.length) {
-                setOfflineUI();
+                // Mantener el fallback live_stream activo si no detecta ID específico
+                if (statusEl) statusEl.textContent = 'En Vivo (Canal)';
                 return;
             }
 
