@@ -8,5 +8,5 @@ window.YOUTUBE_CONFIG = {
 
     // ID de video específico (Déjalo en blanco "" para que el sistema detecte automáticamente el directo cada día)
     // ⚠️ CUANDO TERMINA EL STREAM: volver a poner videoId: ""
-    videoId: "kI9DDlai9qs"
+    videoId: ""
 };
