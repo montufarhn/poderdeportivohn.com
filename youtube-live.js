@@ -3,68 +3,120 @@
 
     const config = window.YOUTUBE_CONFIG || {};
 
-    // Dominio para el embed del chat
-    let domain = window.location.hostname || 'localhost';
-    if (window.location.protocol === 'file:') domain = 'localhost';
-
-    // Permitir forzar un videoId por parámetro URL (?v=ID)
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlVideoId = urlParams.get('v');
-
+    // ── Referencias DOM ─────────────────────────────────────────────────────
     const playerIframe = document.getElementById('yt-player-iframe');
     const chatIframe = document.getElementById('yt-chat-iframe');
     const chatContainer = chatIframe ? chatIframe.parentElement : null;
     const statusEl = document.getElementById('chat-status');
+    const liveBadge = document.querySelector('.live-badge');
 
     if (!playerIframe) return;
 
+    // ── Configuración ───────────────────────────────────────────────────────
+    let domain = window.location.hostname || 'localhost';
+    if (window.location.protocol === 'file:') domain = 'localhost';
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlVideoId = urlParams.get('v');
+
     const channelId = (config.channelId || 'UCWjFYIgvyxX6f9s60fo2sxQ').trim();
     const manualVideoId = (urlVideoId || config.videoId || '').trim();
+    const apiKey = (config.apiKey || '').trim();
 
-    // URL del player en modo "stream en vivo del canal"
-    const LIVE_STREAM_URL = `https://www.youtube.com/embed/live_stream?channel=${channelId}&autoplay=1`;
+    const CHECK_INTERVAL_MS = 2 * 60 * 1000;   // Re-verificar cada 2 min
+    const CACHE_KEY = 'pd_yt_state_v1';
+    const CACHE_DURATION_MS = 4 * 60 * 1000;   // Caché 4 min
 
-    // ── Si hay un videoId manual configurado, usarlo directamente ─────────────
-    if (manualVideoId) {
-        playerIframe.src = `https://www.youtube.com/embed/${manualVideoId}?autoplay=1`;
-        if (chatIframe) chatIframe.src = `https://www.youtube.com/live_chat?v=${manualVideoId}&embed_domain=${domain}`;
-        if (statusEl) statusEl.textContent = 'En Vivo';
-        return;
-    }
+    // ── Estado interno ──────────────────────────────────────────────────────
+    let currentPlayerSrc = '';
+    let currentChatSrc = '';
 
-    // ── Estado interno ─────────────────────────────────────────────────────────
-    let currentLiveId = null;
-    let isOfflineMode = false;
-
-    const CHECK_INTERVAL_MS = 2 * 60 * 1000;  // Re-verificar cada 2 minutos
-    const CACHE_KEY = 'pd_yt_live_id';
-    const CACHE_TIME_KEY = 'pd_yt_live_time';
-    const CACHE_DURATION_MS = 4 * 60 * 1000;  // Caché válida 4 minutos
-
-    // ── Caché ──────────────────────────────────────────────────────────────────
-    function saveCache(id) {
-        try { localStorage.setItem(CACHE_KEY, id); localStorage.setItem(CACHE_TIME_KEY, Date.now().toString()); } catch (_) { }
-    }
-    function clearCache() {
-        try { localStorage.removeItem(CACHE_KEY); localStorage.removeItem(CACHE_TIME_KEY); } catch (_) { }
+    // ── Utilidades caché ────────────────────────────────────────────────────
+    function saveCache(state) {
+        try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+                t: Date.now(),
+                state: state
+            }));
+        } catch (_) { }
     }
     function getCached() {
         try {
-            const id = localStorage.getItem(CACHE_KEY);
-            const t = parseInt(localStorage.getItem(CACHE_TIME_KEY) || '0', 10);
-            if (id && (Date.now() - t < CACHE_DURATION_MS)) return id;
-        } catch (_) { }
-        return null;
+            const raw = localStorage.getItem(CACHE_KEY);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!parsed || !parsed.t || !parsed.state) return null;
+            if (Date.now() - parsed.t > CACHE_DURATION_MS) return null;
+            return parsed.state;
+        } catch (_) {
+            return null;
+        }
+    }
+    function clearCache() {
+        try { localStorage.removeItem(CACHE_KEY); } catch (_) { }
     }
 
-    // ── Actualizar chat ────────────────────────────────────────────────────────
-    function updateChat(videoId) {
-        if (!chatIframe) return;
+    // ── Actualización UI: Player ────────────────────────────────────────────
+    function setPlayer(videoId, autoplay) {
+        const src = `https://www.youtube.com/embed/${videoId}${autoplay ? '?autoplay=1' : ''}`;
+        if (playerIframe.src !== src) {
+            playerIframe.src = src;
+        }
+        currentPlayerSrc = src;
+
+        const wrapper = playerIframe.parentElement;
+        if (!wrapper) return;
+        // Quitar mensaje offline si existía
+        delete wrapper.dataset.offline;
+        playerIframe.style.display = '';
+        const msg = document.getElementById('offline-player-msg');
+        if (msg) msg.remove();
+    }
+
+    function showOfflinePlayerFallback() {
+        const wrapper = playerIframe.parentElement;
+        if (!wrapper) return;
+        // NO ocultamos el player, el video VOD más reciente sigue ahí.
+        // Si el usuario prefiriera ocultar el iframe, activar estas líneas:
+        // delete wrapper.dataset.offline;
+        // playerIframe.style.display = '';
+    }
+
+    // ── Actualización UI: Chat ──────────────────────────────────────────────
+    function openChat(videoId) {
+        if (!chatContainer || !chatIframe) return;
+        delete chatContainer.dataset.offline;
+
+        // Restaurar iframe del chat si fue reemplazado
+        if (!chatContainer.contains(chatIframe)) {
+            chatContainer.innerHTML = '';
+            chatContainer.appendChild(chatIframe);
+            chatIframe.style.cssText = 'width: 100%; height: 100%; border: 0;';
+        }
+
         const src = `https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${domain}`;
-        if (chatIframe.src !== src) chatIframe.src = src;
+        if (chatIframe.src !== src) {
+            chatIframe.src = src;
+        }
+        currentChatSrc = src;
     }
 
-    // ── Indicador de estado ────────────────────────────────────────────────────
+    function closeChatOffline() {
+        if (!chatContainer) return;
+        if (chatContainer.dataset.offline === 'true') return;
+        chatContainer.dataset.offline = 'true';
+        chatContainer.innerHTML = `
+            <div style="padding:24px 16px;color:rgba(255,255,255,0.7);text-align:center;
+                        line-height:1.6;display:flex;flex-direction:column;
+                        align-items:center;justify-content:center;height:100%;">
+                <i class="fa fa-video-camera" style="font-size:2.4rem;color:#f5b56a;margin-bottom:14px;"></i>
+                <p style="margin:0 0 6px 0;font-weight:700;color:#fff;font-size:1rem;">Canal Fuera de Aire</p>
+                <p style="margin:0;font-size:0.82rem;">El chat estará disponible cuando haya una emisión en vivo.</p>
+            </div>`;
+        currentChatSrc = '';
+    }
+
+    // ── Actualización UI: Estado y badge ────────────────────────────────────
     function setStatus(text, isLive) {
         if (!statusEl) return;
         statusEl.textContent = text;
@@ -73,158 +125,116 @@
         statusEl.style.borderColor = isLive ? 'rgba(46,204,113,0.3)' : 'rgba(245,181,106,0.3)';
     }
 
-    // ── Badge "EN VIVO" del navbar ─────────────────────────────────────────────
     function updateLiveBadge(isLive) {
-        const badge = document.querySelector('.live-badge');
-        if (!badge) return;
-        badge.style.opacity = isLive ? '1' : '0.4';
-        badge.title = isLive ? 'Transmitiendo en vivo' : 'Canal fuera de aire';
-    }
+        if (!liveBadge) return;
 
-    // ── UI: modo fuera de aire (chat) ──────────────────────────────────────────
-    function showOfflineChat() {
-        if (!chatContainer || chatContainer.dataset.offline === 'true') return;
-        chatContainer.dataset.offline = 'true';
-        chatContainer.innerHTML = `
-            <div style="padding:24px 16px;color:rgba(255,255,255,0.7);text-align:center;
-                        line-height:1.6;display:flex;flex-direction:column;
-                        align-items:center;justify-content:center;height:100%;">
-                <i class="fa fa-video-camera" style="font-size:2.4rem;color:#f5b56a;margin-bottom:14px;"></i>
-                <p style="margin:0 0 6px 0;font-weight:700;color:#fff;font-size:1rem;">Canal Fuera de Aire</p>
-                <p style="margin:0;font-size:0.82rem;">El chat se activará automáticamente cuando inicie la emisión.</p>
-            </div>`;
-    }
+        const label = liveBadge.querySelector('span');
+        const pulseRing = liveBadge.querySelector('.pulse-dot-ring');
+        const pulseCore = liveBadge.querySelector('.pulse-dot-core');
 
-    // ── UI: modo fuera de aire (player) ───────────────────────────────────────
-    function showOfflinePlayer() {
-        const wrapper = playerIframe.parentElement;
-        if (!wrapper || wrapper.dataset.offline === 'true') return;
-        wrapper.dataset.offline = 'true';
-        playerIframe.style.display = 'none';
-        const msg = document.createElement('div');
-        msg.id = 'offline-player-msg';
-        msg.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;' +
-            'align-items:center;justify-content:center;background:#000;' +
-            'color:rgba(255,255,255,0.75);text-align:center;padding:20px;';
-        msg.innerHTML = `
-            <i class="fa fa-signal" style="font-size:2.8rem;color:#f5b56a;margin-bottom:16px;opacity:0.7;"></i>
-            <p style="margin:0 0 6px 0;font-size:1.1rem;font-weight:700;color:#fff;">Sin transmisión en este momento</p>
-            <p style="margin:0;font-size:0.82rem;color:rgba(255,255,255,0.5);">
-                La señal se cargará automáticamente cuando el canal esté en vivo.
-            </p>`;
-        wrapper.appendChild(msg);
-    }
+        liveBadge.title = isLive ? 'Transmitiendo en vivo' : 'Canal fuera de aire';
+        liveBadge.style.opacity = '1';
 
-    // ── Restaurar player y chat online ────────────────────────────────────────
-    function restoreOnlinePlayer() {
-        const wrapper = playerIframe.parentElement;
-        if (!wrapper) return;
-        delete wrapper.dataset.offline;
-        playerIframe.style.display = '';
-        const msg = document.getElementById('offline-player-msg');
-        if (msg) msg.remove();
-    }
-    function restoreOnlineChat() {
-        if (!chatContainer) return;
-        delete chatContainer.dataset.offline;
-    }
-
-    // ── Activar modo en vivo ───────────────────────────────────────────────────
-    function goLive(videoId) {
-        isOfflineMode = false;
-        restoreOnlinePlayer();
-        restoreOnlineChat();
-        if (currentLiveId !== videoId) {
-            currentLiveId = videoId;
-            // Player: siempre live_stream (más estable, no se interrumpe)
-            if (playerIframe.src !== LIVE_STREAM_URL) playerIframe.src = LIVE_STREAM_URL;
-            updateChat(videoId);
-            saveCache(videoId);
+        if (isLive) {
+            if (label) label.textContent = 'EN VIVO';
+            if (label) label.style.color = '#ff5252';
+            liveBadge.style.background = 'rgba(231, 76, 60, 0.15)';
+            liveBadge.style.borderColor = 'rgba(231, 76, 60, 0.4)';
+            liveBadge.style.boxShadow = '0 0 15px rgba(231, 76, 60, 0.2)';
+            if (pulseCore) {
+                pulseCore.style.background = '#ff5252';
+                pulseCore.style.boxShadow = '0 0 8px #ff5252';
+            }
+            if (pulseRing) {
+                pulseRing.style.display = '';
+                // Restaurar el pseudo-elemento ::before pulsante
+                pulseRing.style.animationPlayState = 'running';
+            }
+        } else {
+            if (label) label.textContent = 'OFFLINE';
+            if (label) label.style.color = '#95a5a6';
+            liveBadge.style.background = 'rgba(149, 165, 166, 0.12)';
+            liveBadge.style.borderColor = 'rgba(149, 165, 166, 0.3)';
+            liveBadge.style.boxShadow = 'none';
+            if (pulseCore) {
+                pulseCore.style.background = '#7f8c8d';
+                pulseCore.style.boxShadow = 'none';
+            }
+            if (pulseRing) {
+                // Ocultar el anillo pulsante (::before) sin romper layout
+                pulseRing.style.opacity = '0.3';
+                pulseRing.style.animation = 'none';
+            }
         }
-        setStatus('En Vivo', true);
-        updateLiveBadge(true);
     }
 
-    // ── Activar modo fuera de aire ─────────────────────────────────────────────
-    function goOffline() {
-        isOfflineMode = true;
-        currentLiveId = null;
-        clearCache();
-        showOfflinePlayer();
-        showOfflineChat();
-        setStatus('Sin transmisión', false);
-        updateLiveBadge(false);
-    }
+    // ── Proxies CORS compartidos ────────────────────────────────────────────
+    const buildProxies = (targetUrl) => [
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`
+    ];
 
-    // ── Verificar si un videoId está realmente en vivo (via proxy CORS) ───────
-    // Busca señales en el HTML de la página watch de YouTube.
-    function verifyLive(videoId, onLive, onNotLive) {
-        const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
-        const proxies = [
-            `https://api.allorigins.win/raw?url=${encodeURIComponent(watchUrl)}`,
-            `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(watchUrl)}`
-        ];
-
-        function tryProxy(idx) {
+    function tryProxies(proxies, processResponse, onDone, onFail) {
+        let idx = 0;
+        function next() {
             if (idx >= proxies.length) {
-                // No se pudo verificar: asumir en vivo para no bloquear
-                onLive(videoId);
+                onFail && onFail();
                 return;
             }
-            fetch(proxies[idx], { cache: 'no-store' })
-                .then(r => r.text())
-                .then(html => {
-                    // Señales positivas: stream activo
-                    const isLiveNow =
-                        html.includes('"isLiveBroadcast":true') ||
-                        html.includes('"isLiveBroadcast": true') ||
-                        (html.includes('liveBroadcastDetails') && html.includes('"isLiveNow":true')) ||
-                        html.includes('"status":"LIVE"');
-
-                    // Señales negativas: ya terminó o es VOD
-                    const notLive =
-                        html.includes('"isLiveBroadcast":false') ||
-                        html.includes('"isLiveBroadcast": false');
-
-                    if (notLive && !isLiveNow) {
-                        onNotLive();
-                    } else {
-                        onLive(videoId);
-                    }
+            fetch(proxies[idx++], { cache: 'no-store' })
+                .then(r => {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return processResponse(r);
                 })
-                .catch(() => tryProxy(idx + 1));
+                .then(onDone)
+                .catch(() => next());
         }
-
-        tryProxy(0);
+        next();
     }
 
-    // ── Obtener lista de videoIds recientes del canal via RSS ─────────────────
+    // ── Verificación: ¿un videoId está en vivo AHORA? ──────────────────────
+    function verifyLive(videoId, onLive, onNotLive) {
+        const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+        const proxies = buildProxies(watchUrl);
+        tryProxies(
+            proxies,
+            function processResponse(r) { return r.text(); },
+            function onDone(html) {
+                const isLiveNow =
+                    html.includes('"isLiveBroadcast":true') ||
+                    html.includes('"isLiveBroadcast": true') ||
+                    (html.includes('liveBroadcastDetails') && html.includes('"isLiveNow":true')) ||
+                    html.includes('"status":"LIVE"');
+                const notLive =
+                    html.includes('"isLiveBroadcast":false') ||
+                    html.includes('"isLiveBroadcast": false');
+                if (notLive && !isLiveNow) onNotLive(); else onLive(videoId);
+            },
+            function onFail() {
+                // No se pudo verificar; asumir en vivo para no bloquear
+                onLive(videoId);
+            }
+        );
+    }
+
+    // ── Obtener IDs de videos recientes via RSS ─────────────────────────────
     function fetchRecentVideoIds(callback) {
         const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
-        const proxies = [
-            `https://api.allorigins.win/raw?url=${encodeURIComponent(rssUrl)}`,
-            `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(rssUrl)}`
-        ];
-
-        function tryProxy(idx) {
-            if (idx >= proxies.length) { callback([]); return; }
-            fetch(proxies[idx], { cache: 'no-store' })
-                .then(r => r.text())
-                .then(xml => {
-                    const matches = [...xml.matchAll(/<yt:videoId>([a-zA-Z0-9_-]{11})<\/yt:videoId>/g)];
-                    const ids = matches.map(m => m[1]);
-                    if (ids.length > 0) callback(ids);
-                    else tryProxy(idx + 1);
-                })
-                .catch(() => tryProxy(idx + 1));
-        }
-
-        tryProxy(0);
+        const proxies = buildProxies(rssUrl);
+        tryProxies(
+            proxies,
+            function processResponse(r) { return r.text(); },
+            function onDone(xml) {
+                const matches = [...xml.matchAll(/<yt:videoId>([a-zA-Z0-9_-]{11})<\/yt:videoId>/g)];
+                const ids = matches.map(m => m[1]);
+                callback(ids);
+            },
+            function onFail() { callback([]); }
+        );
     }
 
-    // ── Detección via YouTube Data API (si hay apiKey configurada) ────────────
+    // ── Detección oficial via YouTube Data API ──────────────────────────────
     function detectViaApi(onLive, onOffline) {
-        const apiKey = (config.apiKey || '').trim();
         if (!apiKey) return false;
 
         const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${apiKey}`;
@@ -234,7 +244,10 @@
                 if (data.items && data.items.length > 0 && data.items[0].id && data.items[0].id.videoId) {
                     onLive(data.items[0].id.videoId);
                 } else {
-                    onOffline();
+                    // No hay directo: obtener el video más reciente para reproducirlo
+                    fetchRecentVideoIds(function (ids) {
+                        onOffline(ids && ids.length > 0 ? ids[0] : null);
+                    });
                 }
             })
             .catch(() => detectViaRss(onLive, onOffline));
@@ -242,42 +255,100 @@
         return true;
     }
 
-    // ── Detección via RSS + verificación de estado en vivo ────────────────────
+    // ── Detección via RSS + verificación ────────────────────────────────────
     function detectViaRss(onLive, onOffline) {
         fetchRecentVideoIds(function (ids) {
-            if (!ids || ids.length === 0) { onOffline(); return; }
+            if (!ids || ids.length === 0) { onOffline(null); return; }
 
-            // Verificar los 3 videos más recientes para encontrar uno en vivo
-            const toCheck = ids.slice(0, 3);
-            let idx = 0;
-
+            // El más reciente primero; verificar los 3 primeros buscando uno EN VIVO
+            const candidates = ids.slice(0, 3);
+            let i = 0;
             function checkNext() {
-                if (idx >= toCheck.length) { onOffline(); return; }
-                const videoId = toCheck[idx++];
-                verifyLive(videoId, onLive, checkNext);
+                if (i >= candidates.length) {
+                    // Ninguno de los últimos 3 está en vivo → estamos offline
+                    // Devolver el más reciente como video VOD a reproducir
+                    onOffline(ids[0]);
+                    return;
+                }
+                const id = candidates[i++];
+                verifyLive(
+                    id,
+                    function live() { onLive(id); },
+                    checkNext
+                );
             }
-
             checkNext();
         });
     }
 
-    // ── Ciclo principal de detección ──────────────────────────────────────────
-    function runDetection() {
-        function onLive(videoId) { goLive(videoId); }
-        function onOffline() { goOffline(); }
-        if (!detectViaApi(onLive, onOffline)) detectViaRss(onLive, onOffline);
+    // ── Cambio de estado: MODO EN VIVO ──────────────────────────────────────
+    function goLive(videoId) {
+        setPlayer(videoId, true);
+        openChat(videoId);
+        setStatus('En Vivo', true);
+        updateLiveBadge(true);
+        saveCache({ mode: 'live', videoId: videoId });
     }
 
-    // ── Arranque: cargar caché mientras se verifica en background ─────────────
-    const cachedId = getCached();
-    if (cachedId) {
-        if (playerIframe.src !== LIVE_STREAM_URL) playerIframe.src = LIVE_STREAM_URL;
-        updateChat(cachedId);
+    // ── Cambio de estado: MODO OFFLINE (VOD más reciente) ───────────────────
+    function goOffline(latestVideoId) {
+        // Si nos llegó un videoId VOD → reproducirlo
+        if (latestVideoId) {
+            setPlayer(latestVideoId, false);
+        }
+        // Cerrar chat: no hay directo
+        closeChatOffline();
+        setStatus('Sin transmisión', false);
+        updateLiveBadge(false);
+        if (latestVideoId) {
+            saveCache({ mode: 'offline', videoId: latestVideoId });
+        } else {
+            clearCache();
+        }
+    }
+
+    // ── Ciclo principal de detección ────────────────────────────────────────
+    function runDetection() {
+        function onLive(videoId) { goLive(videoId); }
+        function onOffline(latestVod) { goOffline(latestVod); }
+        if (!detectViaApi(onLive, onOffline)) {
+            detectViaRss(onLive, onOffline);
+        }
+    }
+
+    // ── Modo manual: videoId forzado por config o URL ───────────────────────
+    if (manualVideoId) {
+        setPlayer(manualVideoId, true);
+        // Asumir que está en vivo si el usuario lo configuró manualmente
+        openChat(manualVideoId);
         setStatus('En Vivo', true);
-        currentLiveId = cachedId;
+        updateLiveBadge(true);
+        saveCache({ mode: 'live', videoId: manualVideoId });
+        // Aun así re-verificamos periódicamente por si cayeron.
+        setInterval(runDetection, CHECK_INTERVAL_MS);
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'visible') runDetection();
+        });
+        return;
+    }
+
+    // ── Arranque: aplicar caché instantáneo mientras se verifica ────────────
+    const cached = getCached();
+    if (cached && cached.videoId) {
+        if (cached.mode === 'live') {
+            setPlayer(cached.videoId, true);
+            openChat(cached.videoId);
+            setStatus('En Vivo', true);
+            updateLiveBadge(true);
+        } else {
+            setPlayer(cached.videoId, false);
+            closeChatOffline();
+            setStatus('Sin transmisión', false);
+            updateLiveBadge(false);
+        }
     } else {
-        if (playerIframe.src !== LIVE_STREAM_URL) playerIframe.src = LIVE_STREAM_URL;
         setStatus('Verificando...', false);
+        updateLiveBadge(false);
     }
 
     // Detección inmediata
@@ -292,174 +363,3 @@
     });
 
 })();
-
-let domain = window.location.hostname || 'localhost';
-const isFileProtocol = window.location.protocol === 'file:';
-
-if (isFileProtocol) {
-    domain = 'localhost';
-}
-
-// Permitir pasar el videoId por parámetro URL si se requiere (?v=ID_VIDEO)
-const urlParams = new URLSearchParams(window.location.search);
-const urlVideoId = urlParams.get('v');
-
-const playerIframe = document.getElementById('yt-player-iframe');
-const chatIframe = document.getElementById('yt-chat-iframe');
-const chatContainer = chatIframe ? chatIframe.parentElement : null;
-const statusEl = document.getElementById('chat-status');
-
-if (!playerIframe) return;
-
-const channelId = (config.channelId || 'UCWjFYIgvyxX6f9s60fo2sxQ').trim();
-const manualVideoId = (urlVideoId || config.videoId || '').trim();
-
-// ─────────────────────────────────────────────────────────────────────────
-// REGLA PRINCIPAL: El player usa SIEMPRE live_stream?channel= a menos que
-// se haya configurado un videoId manual. Esto evita interrupciones al
-// detectar el ID del stream en segundo plano.
-//
-// CAUSA DEL BUG: Cambiar playerIframe.src reinicia el iframe por completo
-// y corta la transmisión durante ~1 minuto mientras recarga el embed.
-// Solución: el player nunca se toca; solo se actualiza el chat.
-// ─────────────────────────────────────────────────────────────────────────
-const fallbackStreamUrl = `https://www.youtube.com/embed/live_stream?channel=${channelId}&autoplay=1`;
-
-if (manualVideoId) {
-    // Modo manual: video específico configurado en youtube-config.js o URL
-    const manualSrc = `https://www.youtube.com/embed/${manualVideoId}?autoplay=1`;
-    if (playerIframe.src !== manualSrc) playerIframe.src = manualSrc;
-    updateChat(manualVideoId);
-    if (statusEl) statusEl.textContent = 'En Vivo';
-    return; // No necesitamos auto-detección
-}
-
-// Modo auto: player siempre en live_stream (sin interrupción)
-if (!playerIframe.src || playerIframe.src === '' || playerIframe.src === window.location.href) {
-    playerIframe.src = fallbackStreamUrl;
-}
-
-// ─────────────────────────────────────────────────────────────────────────
-// Solo actualizamos el CHAT con el videoId específico, nunca el player.
-// ─────────────────────────────────────────────────────────────────────────
-function updateChat(videoId) {
-    if (!chatIframe) return;
-    const targetChatSrc = `https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${domain}`;
-    if (chatIframe.src !== targetChatSrc) {
-        chatIframe.src = targetChatSrc;
-    }
-}
-
-function showOfflineChat() {
-    if (!chatContainer) return;
-    chatContainer.innerHTML = `
-            <div style="padding: 24px 16px; color: rgba(255,255,255,0.7); text-align: center; font-size: 0.88rem; line-height: 1.5; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
-                <i class="fa fa-video-camera" style="font-size: 2.2rem; color: #f5b56a; margin-bottom: 12px;"></i>
-                <p style="margin: 0 0 8px 0; font-weight: 600; color: #fff;">Canal Fuera de Aire</p>
-                <p style="margin: 0;">El chat en vivo se activará automáticamente en cuanto inicie la emisión en YouTube.</p>
-            </div>
-        `;
-}
-
-// ─────────────────────────────────────────────────────────────────────────
-// Caché local del videoId — solo para el CHAT, nunca para el player
-// ─────────────────────────────────────────────────────────────────────────
-const CACHE_KEY = 'pd_yt_live_id';
-const CACHE_TIME_KEY = 'pd_yt_live_time';
-const CACHE_DURATION_MS = 30 * 60 * 1000; // 30 minutos
-
-function saveCache(videoId) {
-    try {
-        localStorage.setItem(CACHE_KEY, videoId);
-        localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
-    } catch (e) { }
-}
-
-function clearCache() {
-    try {
-        localStorage.removeItem(CACHE_KEY);
-        localStorage.removeItem(CACHE_TIME_KEY);
-    } catch (e) { }
-}
-
-// Cargar chat desde caché (el player ya está activo con live_stream)
-try {
-    const cachedId = localStorage.getItem(CACHE_KEY);
-    const cachedTime = parseInt(localStorage.getItem(CACHE_TIME_KEY) || '0', 10);
-    if (cachedId && (Date.now() - cachedTime < CACHE_DURATION_MS)) {
-        updateChat(cachedId);
-        if (statusEl) statusEl.textContent = 'En Vivo';
-    } else if (cachedId) {
-        clearCache();
-        showOfflineChat();
-    } else {
-        showOfflineChat();
-    }
-} catch (e) {
-    showOfflineChat();
-}
-
-// ─────────────────────────────────────────────────────────────────────────
-// Detección en segundo plano del videoId — SOLO para el chat
-// ─────────────────────────────────────────────────────────────────────────
-
-// Opción A: API oficial de YouTube (si se configuró apiKey en youtube-config.js)
-if (config.apiKey && config.apiKey.trim()) {
-    const apiKey = config.apiKey.trim();
-    const apiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${apiKey}`;
-
-    fetch(apiUrl)
-        .then(res => res.json())
-        .then(data => {
-            if (data.items && data.items.length > 0 && data.items[0].id && data.items[0].id.videoId) {
-                const liveId = data.items[0].id.videoId;
-                updateChat(liveId);
-                saveCache(liveId);
-                if (statusEl) statusEl.textContent = 'En Vivo';
-            } else {
-                clearCache();
-                showOfflineChat();
-                if (statusEl) statusEl.textContent = 'Sin directo activo';
-            }
-        })
-        .catch(() => autoDetectRssFeed());
-    return;
-}
-
-// Opción B: RSS del canal (sin API key) — solo actualiza el chat, NO el player
-function autoDetectRssFeed() {
-    const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
-    const proxies = [
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(rssUrl)}`,
-        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(rssUrl)}`
-    ];
-
-    function tryProxy(index) {
-        if (index >= proxies.length) {
-            // No se detectó ID. El player sigue activo con live_stream sin interrupciones.
-            if (statusEl) statusEl.textContent = 'En Vivo';
-            return;
-        }
-
-        fetch(proxies[index])
-            .then(res => res.text())
-            .then(xml => {
-                const match = xml.match(/<yt:videoId>([a-zA-Z0-9_-]{11})<\/yt:videoId>/);
-                if (match && match[1]) {
-                    const detectedId = match[1];
-                    // SOLO actualizar el chat — el player NO se toca
-                    updateChat(detectedId);
-                    saveCache(detectedId);
-                    if (statusEl) statusEl.textContent = 'En Vivo';
-                } else {
-                    tryProxy(index + 1);
-                }
-            })
-            .catch(() => tryProxy(index + 1));
-    }
-
-    tryProxy(0);
-}
-
-autoDetectRssFeed();
-}) ();
