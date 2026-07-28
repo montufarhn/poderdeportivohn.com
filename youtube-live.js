@@ -9,6 +9,8 @@
     const chatContainer = chatIframe ? chatIframe.parentElement : null;
     const statusEl = document.getElementById('chat-status');
     const liveBadge = document.querySelector('.live-badge');
+    const mobileOverlay = document.getElementById('mobile-play-overlay');
+    const mobilePlayBtn = document.getElementById('mobile-play-btn');
 
     if (!playerIframe) return;
 
@@ -24,13 +26,21 @@
     const apiKey = (config.apiKey || '').trim();
 
     const CHECK_INTERVAL_MS = 2 * 60 * 1000;
-    const CACHE_KEY = 'pd_yt_state_v3';
+    const CACHE_KEY = 'pd_yt_state_v4';
     const CACHE_DURATION_MS = 4 * 60 * 1000;
+
+    // ── Parámetros compatibles con móviles ──────────────────────────────────
+    // Chrome/Safari móvil BLOQUEAN autoplay a menos que el video esté MUTEADO.
+    // playsinline=1 evita que iOS abra el reproductor fullscreen nativo.
+    // rel=0 evita sugerencias al final. modestbranding=1 marca sutil.
+    const MOBILE_SAFE_PARAMS = 'autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1';
+    const VOD_PARAMS = 'mute=0&playsinline=1&rel=0&modestbranding=1'; // VOD: sin autoplay, con audio
 
     // ── Estado interno ──────────────────────────────────────────────────────
     let isCurrentlyLive = null;      // null = desconocido, true/false = confirmado
     let currentKnownLiveId = null;   // Último ID de live confirmado
     let currentPlayerVideoId = null; // Qué videoId (live o VOD) está actualmente en el iframe
+    let isMuted = true;              // Estado actual de audio (empieza muteado por mobile)
 
     // ── Utilidades caché ────────────────────────────────────────────────────
     function saveCache(state) {
@@ -63,6 +73,20 @@
         }
     }
 
+    // ── Construir URL embed de YouTube según estado muteado ────────────────
+    function buildLiveEmbed(videoId) {
+        const params = isMuted ? MOBILE_SAFE_PARAMS : MOBILE_SAFE_PARAMS.replace('mute=1', 'mute=0');
+        return `https://www.youtube.com/embed/${videoId}?${params}`;
+    }
+    function buildLiveStreamPlaceholderEmbed() {
+        const params = isMuted ? MOBILE_SAFE_PARAMS : MOBILE_SAFE_PARAMS.replace('mute=1', 'mute=0');
+        return `https://www.youtube.com/embed/live_stream?channel=${channelId}&${params}`;
+    }
+    function buildVodEmbed(videoId) {
+        // VOD: audio activo por defecto (el usuario lo querrá ver con sonido)
+        return `https://www.youtube.com/embed/${videoId}?${VOD_PARAMS}`;
+    }
+
     // ── Player: Establecer live SI Y SOLO SI el videoId CAMBIÓ ─────────────
     //    Nunca re-establece el mismo src -> no corta la reproducción en curso
     function setLivePlayerOnlyIfDifferent(liveVideoId) {
@@ -71,8 +95,7 @@
             clearOfflineOverlays();
             return;
         }
-        const src = `https://www.youtube.com/embed/${liveVideoId}?autoplay=1`;
-        playerIframe.src = src;
+        playerIframe.src = buildLiveEmbed(liveVideoId);
         currentPlayerVideoId = liveVideoId;
         clearOfflineOverlays();
     }
@@ -81,7 +104,7 @@
     function setLiveStreamPlaceholder() {
         // Solo aplicar si NO hay un liveId específico ya cargado
         if (currentPlayerVideoId !== null) { clearOfflineOverlays(); return; }
-        const src = `https://www.youtube.com/embed/live_stream?channel=${channelId}&autoplay=1`;
+        const src = buildLiveStreamPlaceholderEmbed();
         if (playerIframe.src !== src) playerIframe.src = src;
         clearOfflineOverlays();
     }
@@ -89,9 +112,9 @@
     // ── Player: VOD (solo cuando OFFLINE ha sido CONFIRMADO) ────────────────
     function setVodPlayer(videoId) {
         if (currentPlayerVideoId === videoId) { clearOfflineOverlays(); return; }
-        const src = `https://www.youtube.com/embed/${videoId}`; // sin autoplay en VOD
-        playerIframe.src = src;
+        playerIframe.src = buildVodEmbed(videoId);
         currentPlayerVideoId = videoId;
+        isMuted = false; // VOD: audio encendido
         clearOfflineOverlays();
     }
 
@@ -408,5 +431,62 @@
     document.addEventListener('visibilitychange', function () {
         if (document.visibilityState === 'visible') runDetection();
     });
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // BOTÓN DE REPRODUCCIÓN MÓVIL (overlay "Toca para reproducir")
+    // ═══════════════════════════════════════════════════════════════════════
+    // Nota: iOS/Safari móvil requiere una interacción TÁCTUA del usuario para desbloquear
+    //       audio + autoplay. Al pulsar el botón cambiamos mute=1 → mute=0 y lo que fuerza
+    //       play & audio y re-cargamos el iframe manteniendo el mismo videoId.
+    function hideMobileOverlay() {
+        if (mobileOverlay) {
+            mobileOverlay.style.display = 'none';
+            mobileOverlay.setAttribute('aria-hidden', 'true');
+        }
+    }
+    function forceUnmuteAndKeepVideo() {
+        // Desmutear SIN perder el videoId actual (se re-carga src pero MISMOS segundos)
+        isMuted = false;
+        if (currentKnownLiveId) {
+            // Live confirmado con ID: re-construir embed pero con mute=0
+            const liveId = currentKnownLiveId;
+            currentPlayerVideoId = null; // Forzar rebuild de src
+            setLivePlayerOnlyIfDifferent(liveId);
+        } else if (currentPlayerVideoId && isCurrentlyLive === false) {
+            // VOD de ayer: audio encendido
+            const vodId = currentPlayerVideoId;
+            currentPlayerVideoId = null;
+            setVodPlayer(vodId);
+        } else {
+            // Placeholder live_stream?channel=
+            const src = buildLiveStreamPlaceholderEmbed().replace('mute=1', 'mute=0');
+            playerIframe.src = src;
+        }
+    }
+
+    if (mobilePlayBtn) {
+        // Tanto touchstart + click para máximo Safari y Samsung Internet
+        ['click', 'touchstart'].forEach(ev =>
+            mobilePlayBtn.addEventListener(ev, function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                forceUnmuteAndKeepVideo();
+                hideMobileOverlay();
+            }, { passive: false }));
+    }
+
+    // Detectar si es ESCRITORIO -> ocultar el overlay inmediatamente
+    const isDesktopAny = window.matchMedia && window.matchMedia('(min-width: 901px)').matches;
+    if (isDesktopAny) hideMobileOverlay();
+
+    // Escuchar cambios de media query (orientación / resize) para mantener coherencia
+    if (window.matchMedia) {
+        const mql = window.matchMedia('(min-width: 901px)');
+        const onChange = function (e) {
+            if (e.matches) hideMobileOverlay();
+        };
+        if (mql.addEventListener) mql.addEventListener('change', onChange);
+        else if (mql.addListener) mql.addListener(onChange);
+    }
 
 })();
