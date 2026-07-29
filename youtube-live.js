@@ -14,6 +14,41 @@
 
     if (!playerIframe) return;
 
+    // ── PARCHE DE COMPATIBILIDAD SAFARI (macOS + iOS) ──────────────────────
+    // Safari es el navegador más quisquilloso con permisos de iframe y autoplay.
+    // Usamos wildcards en allow, seteamos atributos por setAttribute y
+    // doble asignación de src para asegurar la carga.
+    try {
+        const ua = (navigator && navigator.userAgent || '').toLowerCase();
+        const isSafariLike =
+            (ua.includes('safari') && !ua.includes('chrome') && !ua.includes('chromium') && !ua.includes('edg')) ||
+            ua.includes('iphone') || ua.includes('ipad') || ua.includes('ipod') ||
+            (ua.includes('mac') && 'ontouchend' in document); // iPadOS 13+ se hace pasar por Mac
+
+        if (isSafariLike) {
+            // Permisos más amplios con * para que Safari no los bloquee
+            const allowAll = 'accelerometer; autoplay *; clipboard-write; encrypted-media; gyroscope; picture-in-picture *; web-share; fullscreen *';
+            try { playerIframe.setAttribute('allow', allowAll); } catch (_) {}
+            try { playerIframe.allow = allowAll; } catch (_) {}
+            // Playsinline doble (estándar + legacy webkit)
+            try { playerIframe.setAttribute('playsinline', 'true'); } catch (_) {}
+            try { playerIframe.setAttribute('webkit-playsinline', 'true'); } catch (_) {}
+            try { playerIframe.setAttribute('x5-playsinline', 'true'); } catch (_) {}
+        }
+    } catch (_) {}
+
+    // Helper: asignar src con doble vía (propiedad JS + setAttribute) para Safari
+    function assignIframeSrc(iframe, src) {
+        try {
+            // Método 1: setAttribute (Safari a veces no reacciona a iframe.src = ...)
+            iframe.setAttribute('src', src);
+        } catch (_) {}
+        try {
+            // Método 2: asignación directa (resto de navegadores)
+            if (iframe.src !== src) iframe.src = src;
+        } catch (_) {}
+    }
+
     // ── Configuración ───────────────────────────────────────────────────────
     let domain = window.location.hostname || 'localhost';
     if (window.location.protocol === 'file:') domain = 'localhost';
@@ -95,7 +130,7 @@
             clearOfflineOverlays();
             return;
         }
-        playerIframe.src = buildLiveEmbed(liveVideoId);
+        assignIframeSrc(playerIframe, buildLiveEmbed(liveVideoId));
         currentPlayerVideoId = liveVideoId;
         clearOfflineOverlays();
     }
@@ -105,14 +140,14 @@
         // Solo aplicar si NO hay un liveId específico ya cargado
         if (currentPlayerVideoId !== null) { clearOfflineOverlays(); return; }
         const src = buildLiveStreamPlaceholderEmbed();
-        if (playerIframe.src !== src) playerIframe.src = src;
+        assignIframeSrc(playerIframe, src);
         clearOfflineOverlays();
     }
 
     // ── Player: VOD (solo cuando OFFLINE ha sido CONFIRMADO) ────────────────
     function setVodPlayer(videoId) {
         if (currentPlayerVideoId === videoId) { clearOfflineOverlays(); return; }
-        playerIframe.src = buildVodEmbed(videoId);
+        assignIframeSrc(playerIframe, buildVodEmbed(videoId));
         currentPlayerVideoId = videoId;
         isMuted = false; // VOD: audio encendido
         clearOfflineOverlays();
@@ -126,9 +161,12 @@
             chatContainer.innerHTML = '';
             chatContainer.appendChild(chatIframe);
             chatIframe.style.cssText = 'width: 100%; height: 100%; border: 0;';
+            // Asegurar que si chat es transparente, el fondo siempre contrasta
+            chatContainer.style.background = '#343a45';
         }
-        const src = `https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${domain}`;
-        if (chatIframe.src !== src) chatIframe.src = src;
+        // dark_theme=1: fuerza tema oscuro YouTube chat → letras blancas (coincide con fondo oscuro del wrapper)
+        const src = `https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${domain}&dark_theme=1`;
+        if (chatIframe.src !== src) assignIframeSrc(chatIframe, src);
     }
 
     function closeChatOffline() {
@@ -460,7 +498,7 @@
         } else {
             // Placeholder live_stream?channel=
             const src = buildLiveStreamPlaceholderEmbed().replace('mute=1', 'mute=0');
-            playerIframe.src = src;
+            assignIframeSrc(playerIframe, src);
         }
     }
 
