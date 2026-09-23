@@ -369,48 +369,7 @@
             border: 0;
         }
 
-        /* Overlay "Toca para reproducir" — SÓLO MÓVILES (<= 900px) */
-        .mobile-play-overlay {
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at center, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.85) 100%);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-        }
-        .mobile-play-btn {
-            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-            color: #fff;
-            border: 2px solid rgba(255,255,255,0.25);
-            padding: 16px 28px;
-            border-radius: 999px;
-            font-size: 1.1rem;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            box-shadow: 0 10px 30px rgba(231,76,60,0.35), 0 0 0 8px rgba(255,255,255,0.05);
-            -webkit-tap-highlight-color: transparent;
-            transition: transform 0.15s ease;
-        }
-        .mobile-play-btn:active {
-            transform: scale(0.96);
-        }
-        .mobile-play-btn i {
-            font-size: 1.8rem;
-            line-height: 1;
-        }
 
-        /* Mostrar overlay SÓLO en móviles */
-        @media (max-width: 900px) {
-            .mobile-play-overlay {
-                display: flex;
-            }
-        }
 
         /* Barra de acciones bajo el reproductor */
         .stream-actions-bar {
@@ -771,13 +730,6 @@
                     <div class="video-responsive-container" id="yt-video-container">
                         <iframe src='https://ssh101.com/securelive/index.php?id=hnpdoficial2026' frameborder=0 scrolling=no align=middle width=852 height=480 webkitallowfullscreen mozallowfullscreen allowfullscreen allow="autoplay; fullscreen" referrerpolicy="no-referrer"></iframe>
 
-                        <!-- Overlay de "Toca para reproducir" SÓLO para móviles (restricción autoplay) -->
-                        <div id="mobile-play-overlay" class="mobile-play-overlay" aria-hidden="true">
-                            <button type="button" id="mobile-play-btn" class="mobile-play-btn">
-                                <i class="fa fa-play-circle-o" aria-hidden="true"></i>
-                                <span>Toca para reproducir</span>
-                            </button>
-                        </div>
                     </div>
 
                     <div class="stream-actions-bar">
