@@ -1,7 +1,7 @@
 // Configuración de YouTube Live para Poder Deportivo
 window.YOUTUBE_CONFIG = {
     // ID de tu canal de YouTube (El sistema detectará automáticamente tu directo en vivo)
-    channelId: "UCWjFYIgvyxX6f9s60fo2sxQ",
+    channelId: "UC3zUC-TphdQq4aGo3PzGoKA",
 
     // Clave de API oficial (opcional)
     apiKey: "",

@@ -153,6 +153,13 @@
             box-shadow: 0 0 15px rgba(231, 76, 60, 0.2);
         }
 
+        .live-badge.is-checking {
+            color: #ffd166;
+            background: rgba(255, 209, 102, 0.12);
+            border-color: rgba(255, 209, 102, 0.25);
+            box-shadow: none;
+        }
+
         .pulse-dot-ring {
             position: relative;
             width: 10px;
@@ -681,11 +688,11 @@
                 </div>
             </a>
 
-            <div class="live-badge" title="Transmitiendo en vivo">
+            <div class="live-badge is-checking" title="Verificando transmisión" role="status" aria-live="polite">
                 <div class="pulse-dot-ring">
                     <div class="pulse-dot-core"></div>
                 </div>
-                <span>EN VIVO</span>
+                <span>VERIFICANDO...</span>
             </div>
 
             <div class="nav-social-actions">
@@ -728,13 +735,16 @@
                     </div>
 
                     <div class="video-responsive-container" id="yt-video-container">
-                        <iframe src='https://ssh101.com/securelive/index.php?id=hnpdoficial2026' frameborder=0 scrolling=no align=middle width=852 height=480 webkitallowfullscreen mozallowfullscreen allowfullscreen allow="autoplay; fullscreen" referrerpolicy="no-referrer"></iframe>
-
+                        <iframe id="yt-player-iframe"
+                            src="https://www.youtube.com/embed/live_stream?channel=UC3zUC-TphdQq4aGo3PzGoKA&amp;autoplay=1&amp;mute=1&amp;playsinline=1&amp;rel=0&amp;modestbranding=1"
+                            title="Transmisión en vivo de Poder Deportivo en YouTube"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
                     </div>
 
                     <div class="stream-actions-bar">
                         <div class="stream-info-pill">
-                            <i class="fa fa-signal" style="color: #2ecc71;"></i> Signal Status: Óptima
+                            <i class="fa fa-youtube-play" style="color: #ff0000;"></i> Canal oficial de YouTube
                         </div>
                         <div class="stream-share-buttons">
                             <a href="https://wa.me/?text=MIRA%20PODER%20DEPORTIVO%20EN%20VIVO%20%E2%96%B6%20https://poderdeportivohn.com"
@@ -839,8 +849,8 @@
     <script src="js/jquery-2.1.3.min.js?v=20260729"></script>
     <script src="js/plugins.js?v=20260729"></script>
     <script src="js/main.js?v=20260729"></script>
-    <!-- <script src="youtube-config.js?v=20260729"></script> -->
-    <!-- <script src="youtube-live.js?v=20260729"></script> -->
+    <script src="youtube-config.js?v=20261110"></script>
+    <script src="youtube-live.js?v=20261110"></script>
 
 </body>
 
