@@ -1,12 +1,12 @@
 // Configuración de YouTube Live para Poder Deportivo
 window.YOUTUBE_CONFIG = {
-    // ID de tu canal de YouTube (El sistema detectará automáticamente tu directo en vivo)
+    // ID del canal de YouTube
     channelId: "UC3zUC-TphdQq4aGo3PzGoKA",
 
-    // Clave de API oficial (opcional)
+    // Clave de YouTube Data API v3 para detectar automáticamente cada nuevo directo.
+    // Restringe la clave por HTTP referrer al dominio del sitio.
     apiKey: "",
 
-    // ID de video específico (Déjalo en blanco "" para que el sistema detecte automáticamente el directo cada día)
-    // ⚠️ CUANDO TERMINA EL STREAM: volver a poner videoId: ""
-    videoId: ""
+    // Video actual como respaldo hasta configurar apiKey.
+    videoId: "IwrZnQLqNF4"
 };

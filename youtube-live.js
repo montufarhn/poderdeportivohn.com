@@ -6,11 +6,13 @@
     const playerId = 'yt-player-iframe';
     const playerContainer = document.getElementById('yt-video-container');
     const liveBadge = document.querySelector('.live-badge');
-
+    const watchLink = document.getElementById('yt-watch-link');
+    const apiKey = (config.apiKey || '').trim();
     if (!playerContainer || !channelId) return;
 
     let player = null;
     let playerState = 'checking';
+    let activeVideoId = (config.videoId || '').trim();
 
     function updateLiveBadge(state) {
         playerState = state;
@@ -39,6 +41,11 @@
         liveBadge.classList.toggle('is-embed-blocked', state === 'embedBlocked');
         liveBadge.title = titles[state];
         if (label) label.textContent = labels[state];
+        if (watchLink) {
+            watchLink.href = activeVideoId
+                ? `https://www.youtube.com/watch?v=${encodeURIComponent(activeVideoId)}`
+                : `https://www.youtube.com/channel/${encodeURIComponent(channelId)}/live`;
+        }
 
         if (state === 'live') {
             liveBadge.style.color = '#ff5252';
@@ -68,9 +75,8 @@
         }
     }
 
-    function buildEmbedUrl() {
+    function buildEmbedUrl(videoId) {
         const params = new URLSearchParams({
-            channel: channelId,
             autoplay: '1',
             mute: '1',
             playsinline: '1',
@@ -79,18 +85,64 @@
             enablejsapi: '1',
             origin: window.location.origin
         });
+        if (videoId) {
+            return `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`;
+        }
+
+        params.set('channel', channelId);
         return `https://www.youtube.com/embed/live_stream?${params.toString()}`;
     }
 
-    function createPlayerIframe() {
+    function createPlayerIframe(videoId) {
         const iframe = document.createElement('iframe');
         iframe.id = playerId;
         iframe.title = 'Transmisión en vivo de Poder Deportivo en YouTube';
         iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
         iframe.allowFullscreen = true;
         iframe.referrerPolicy = 'strict-origin-when-cross-origin';
-        iframe.src = buildEmbedUrl();
+        iframe.src = buildEmbedUrl(videoId);
         return iframe;
+    }
+
+    function checkForLiveVideo() {
+        if (!apiKey) return;
+
+        const params = new URLSearchParams({
+            part: 'id',
+            channelId: channelId,
+            eventType: 'live',
+            type: 'video',
+            key: apiKey
+        });
+
+        fetch(`https://www.googleapis.com/youtube/v3/search?${params.toString()}`, { cache: 'no-store' })
+            .then(function (response) {
+                if (!response.ok) throw new Error(`YouTube API returned HTTP ${response.status}`);
+                return response.json();
+            })
+            .then(function (data) {
+                const liveVideoId = data.items && data.items[0] && data.items[0].id
+                    ? data.items[0].id.videoId
+                    : null;
+
+                if (liveVideoId) {
+                    if (liveVideoId !== activeVideoId || playerState === 'offline') {
+                        activeVideoId = liveVideoId;
+                        if (player) {
+                            player.loadVideoById(liveVideoId);
+                            player.mute();
+                        }
+                    }
+                    if (playerState === 'offline' || playerState === 'unavailable') {
+                        updateLiveBadge('checking');
+                    }
+                } else {
+                    updateLiveBadge('offline');
+                }
+            })
+            .catch(function (error) {
+                console.error('YouTube live detection failed', error);
+            });
     }
 
     function onPlayerStateChange(event) {
@@ -124,17 +176,7 @@
         });
     }
 
-    function retryPlayer() {
-        if (!player || playerState === 'live') return;
-
-        const container = player.getIframe().parentElement;
-        player.destroy();
-        player = null;
-        container.appendChild(createPlayerIframe());
-        initializePlayer();
-    }
-
-    playerContainer.replaceChildren(createPlayerIframe());
+    playerContainer.replaceChildren(createPlayerIframe(activeVideoId));
 
     const previousReadyCallback = window.onYouTubeIframeAPIReady;
     window.onYouTubeIframeAPIReady = function () {
@@ -156,5 +198,8 @@
         document.head.appendChild(apiScript);
     }
 
-    window.setInterval(retryPlayer, 90 * 1000);
+    if (apiKey) {
+        checkForLiveVideo();
+        window.setInterval(checkForLiveVideo, 2 * 60 * 1000);
+    }
 })();
