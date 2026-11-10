@@ -22,18 +22,21 @@
             checking: 'VERIFICANDO...',
             live: 'EN VIVO',
             offline: 'SIN TRANSMISIÓN',
-            unavailable: 'SEÑAL NO DISPONIBLE'
+            unavailable: 'SEÑAL NO DISPONIBLE',
+            embedBlocked: 'VER EN YOUTUBE'
         };
         const titles = {
             checking: 'Verificando transmisión',
             live: 'Transmitiendo en vivo',
             offline: 'Canal fuera de aire',
-            unavailable: 'No se pudo cargar la transmisión de YouTube'
+            unavailable: 'No se pudo cargar la transmisión de YouTube',
+            embedBlocked: 'YouTube no permite reproducir esta transmisión en el sitio'
         };
 
         liveBadge.classList.toggle('is-checking', state === 'checking');
         liveBadge.classList.toggle('is-offline', state === 'offline');
         liveBadge.classList.toggle('is-unavailable', state === 'unavailable');
+        liveBadge.classList.toggle('is-embed-blocked', state === 'embedBlocked');
         liveBadge.title = titles[state];
         if (label) label.textContent = labels[state];
 
@@ -110,8 +113,12 @@
                     event.target.playVideo();
                 },
                 onStateChange: onPlayerStateChange,
-                onError: function () {
-                    updateLiveBadge('offline');
+                onError: function (event) {
+                    if (event.data === 101 || event.data === 150) {
+                        updateLiveBadge('embedBlocked');
+                    } else {
+                        updateLiveBadge('unavailable');
+                    }
                 }
             }
         });
