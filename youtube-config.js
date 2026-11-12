@@ -3,10 +3,10 @@ window.YOUTUBE_CONFIG = {
     // ID del canal de YouTube
     channelId: "UC3zUC-TphdQq4aGo3PzGoKA",
 
-    // Clave de YouTube Data API v3 para detectar automáticamente cada nuevo directo.
+    // Opcional: mejora la detección del directo y la actualización de su ID.
     // Restringe la clave por HTTP referrer al dominio del sitio.
     apiKey: "",
 
-    // Video actual como respaldo hasta configurar apiKey.
-    videoId: "IwrZnQLqNF4"
+    // Déjalo vacío para cargar automáticamente el directo actual del canal.
+    videoId: ""
 };

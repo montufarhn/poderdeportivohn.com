@@ -176,6 +176,17 @@
         });
     }
 
+    function refreshChannelEmbed() {
+        if (apiKey || playerState === 'live' || !window.YT || !window.YT.Player) return;
+
+        if (player) {
+            player.destroy();
+            player = null;
+        }
+        playerContainer.replaceChildren(createPlayerIframe(''));
+        initializePlayer();
+    }
+
     playerContainer.replaceChildren(createPlayerIframe(activeVideoId));
 
     const previousReadyCallback = window.onYouTubeIframeAPIReady;
@@ -201,5 +212,7 @@
     if (apiKey) {
         checkForLiveVideo();
         window.setInterval(checkForLiveVideo, 2 * 60 * 1000);
+    } else {
+        window.setInterval(refreshChannelEmbed, 2 * 60 * 1000);
     }
 })();
