@@ -3,10 +3,13 @@ window.YOUTUBE_CONFIG = {
     // ID del canal de YouTube
     channelId: "UC3zUC-TphdQq4aGo3PzGoKA",
 
-    // Opcional: mejora la detección del directo y la actualización de su ID.
-    // Restringe la clave por HTTP referrer al dominio del sitio.
+    // URL de tu Cloudflare Worker para detección automática 100% gratuita y sin límites.
+    // Pega aquí la URL que te entregue Cloudflare (ej: "https://pdhn-live.tu-cuenta.workers.dev")
+    workerUrl: "https://pdhn-live.montu2609.workers.dev/",
+
+    // Opcional: clave de YouTube Data API v3 (respaldo si no se usa Cloudflare Worker)
     apiKey: "",
 
-    // Déjalo vacío para cargar automáticamente el directo actual del canal.
+    // Opcional: ID de video manual de respaldo. Déjalo vacío para detección automática.
     videoId: ""
 };
