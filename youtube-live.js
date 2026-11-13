@@ -21,6 +21,7 @@
     let playerState = 'checking';
     let currentVideoId = urlVideoId || (config.videoId || '').trim();
     let isChecking = false;
+    let isActivelyPlaying = false;
 
     // Inyectar estilos para el placeholder fuera de aire
     function injectOfflineStyles() {
@@ -174,6 +175,9 @@
     }
 
     function showOfflineScreen() {
+        isActivelyPlaying = false;
+        currentVideoId = '';
+
         if (player) {
             try { player.destroy(); } catch (_) { }
             player = null;
@@ -200,15 +204,18 @@
     }
 
     function buildEmbedUrl(videoId) {
+        const origin = (window.location.origin && window.location.origin !== 'null') ? window.location.origin : undefined;
         const params = new URLSearchParams({
             autoplay: '1',
             mute: '1',
             playsinline: '1',
             rel: '0',
             modestbranding: '1',
-            enablejsapi: '1',
-            origin: window.location.origin
+            enablejsapi: '1'
         });
+        if (origin) {
+            params.set('origin', origin);
+        }
         return `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`;
     }
 
@@ -228,10 +235,16 @@
         if (!states) return;
 
         if (event.data === states.PLAYING) {
+            isActivelyPlaying = true;
             updateLiveBadge('live');
         } else if (event.data === states.ENDED) {
+            // Cuando la transmisión finaliza, se destruye el reproductor para evitar
+            // que YouTube reproduzca videos sugeridos de otros canales.
+            isActivelyPlaying = false;
             updateLiveBadge('offline');
             showOfflineScreen();
+        } else if (event.data === states.PAUSED) {
+            isActivelyPlaying = false;
         }
     }
 
@@ -251,6 +264,7 @@
                 },
                 onStateChange: onPlayerStateChange,
                 onError: function (event) {
+                    isActivelyPlaying = false;
                     if (event.data === 101 || event.data === 150) {
                         updateLiveBadge('embedBlocked');
                     } else {
@@ -264,12 +278,20 @@
     function setLiveStream(videoId) {
         if (!videoId) return;
 
-        if (currentVideoId !== videoId || !document.getElementById(playerId)) {
-            currentVideoId = videoId;
-            playerContainer.replaceChildren(createPlayerIframe(videoId));
-            initializePlayer(videoId);
+        // Si ya está montado este mismo video, no reiniciar el iframe
+        if (currentVideoId === videoId && document.getElementById(playerId)) {
+            updateLiveBadge('live');
+            return;
         }
 
+        // Si el usuario está viendo la transmisión activamente, NUNCA interrumpirlo
+        if (isActivelyPlaying) {
+            return;
+        }
+
+        currentVideoId = videoId;
+        playerContainer.replaceChildren(createPlayerIframe(videoId));
+        initializePlayer(videoId);
         updateLiveBadge('live');
     }
 
@@ -286,8 +308,10 @@
                 if (data.isLive && data.videoId) {
                     setLiveStream(data.videoId);
                 } else {
-                    updateLiveBadge('offline');
-                    if (!urlVideoId) {
+                    // Si el worker confirma que no hay transmisión activa y el usuario
+                    // no está reproduciendo nada, mostrar la pantalla de fuera de aire
+                    if (!isActivelyPlaying && !urlVideoId) {
+                        updateLiveBadge('offline');
                         showOfflineScreen();
                     }
                 }
@@ -316,8 +340,8 @@
                 if (liveVideoId) {
                     setLiveStream(liveVideoId);
                 } else {
-                    updateLiveBadge('offline');
-                    if (!urlVideoId) {
+                    if (!isActivelyPlaying && !urlVideoId) {
+                        updateLiveBadge('offline');
                         showOfflineScreen();
                     }
                 }
@@ -335,11 +359,9 @@
         } else if (apiKey) {
             checkPromise = checkViaGoogleApi();
         } else if (currentVideoId) {
-            // Si hay un videoId manual, lo cargamos directamente
             setLiveStream(currentVideoId);
             checkPromise = Promise.resolve();
         } else {
-            // Sin configuración: mostrar pantalla fuera de aire en lugar de iframe roto
             updateLiveBadge('offline');
             showOfflineScreen();
             checkPromise = Promise.resolve();
@@ -348,7 +370,7 @@
         checkPromise
             .catch(function (err) {
                 console.warn('Error en verificación de señal:', err);
-                if (!currentVideoId && !document.getElementById(playerId)) {
+                if (!isActivelyPlaying && !currentVideoId && !document.getElementById(playerId)) {
                     updateLiveBadge('offline');
                     showOfflineScreen();
                 }

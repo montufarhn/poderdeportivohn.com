@@ -1,12 +1,12 @@
 /**
  * Cloudflare Worker: Detector Automático de YouTube Live para Poder Deportivo HN
+ * Versión 2.0 - Ultra Precisa y Blindada contra Falsos Positivos
  *
  * Despliegue en Cloudflare:
- * 1. Crea un Worker en el panel de Cloudflare (Workers & Pages > Create application > Create Worker).
- * 2. Pega este código completo en el editor del Worker.
- * 3. Haz clic en "Save and deploy".
- * 4. Copia la URL generada (ej: https://pdhn-live.tu-usuario.workers.dev)
- * 5. Pégala en `workerUrl` dentro de `youtube-config.js`.
+ * 1. Entra a tu panel de Cloudflare (Workers & Pages > Tu Worker "pdhn-live").
+ * 2. Ve a la pestaña "Edit code" / Editor de código.
+ * 3. Reemplaza TODO el código existente por este archivo completo.
+ * 4. Haz clic en "Save and deploy" (Guardar e implementar).
  */
 
 const DEFAULT_CHANNEL_ID = 'UC3zUC-TphdQq4aGo3PzGoKA';
@@ -14,7 +14,7 @@ const CACHE_TTL_SECONDS = 60; // Tiempo de caché en el Edge de Cloudflare (60 s
 
 export default {
   async fetch(request, env, ctx) {
-    // 1. Manejo de cabeceras CORS para peticiones desde poderdeportivohn.com
+    // 1. Cabeceras CORS
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -26,7 +26,7 @@ export default {
       return new Response(null, { headers: corsHeaders });
     }
 
-    // 2. Caché en Cloudflare Edge para proteger la velocidad y evitar llamadas excesivas
+    // 2. Caché en Cloudflare Edge
     const cacheUrl = new URL(request.url);
     const cacheKey = new Request(cacheUrl.toString(), request);
     const cache = caches.default;
@@ -36,16 +36,17 @@ export default {
       return cachedResponse;
     }
 
-    const channelId = env.CHANNEL_ID || DEFAULT_CHANNEL_ID;
+    const channelId = (env.CHANNEL_ID || DEFAULT_CHANNEL_ID).trim();
     let result = {
       isLive: false,
       videoId: null,
+      title: null,
       channelId: channelId,
       checkedAt: new Date().toISOString()
     };
 
     try {
-      // Si se configuró una API Key de YouTube en Cloudflare (Opcional)
+      // Método A: Si se configuró YouTube Data API v3 (Opcional)
       if (env.YOUTUBE_API_KEY) {
         const apiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${env.YOUTUBE_API_KEY}`;
         const apiRes = await fetch(apiUrl);
@@ -58,7 +59,7 @@ export default {
           }
         }
       } else {
-        // Detección directa 100% gratuita sin API Key
+        // Método B: Detección directa 100% gratuita y sin límites
         const livePageUrl = `https://www.youtube.com/channel/${channelId}/live`;
         const ytRes = await fetch(livePageUrl, {
           headers: {
@@ -70,46 +71,64 @@ export default {
         });
 
         const finalUrl = ytRes.url || '';
-        const html = await ytRes.text();
+        const isBlocked = finalUrl.includes('consent.youtube.com') || finalUrl.includes('sorry/index');
 
-        // Extraer videoId desde la URL de redirección
-        let extractedVideoId = null;
-        const urlMatch = finalUrl.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
-        if (urlMatch) {
-          extractedVideoId = urlMatch[1];
-        }
+        if (ytRes.ok && !isBlocked) {
+          const html = await ytRes.text();
 
-        // Si no está en la URL, extraer del tag canonical o meta tags
-        if (!extractedVideoId) {
-          const canonicalMatch = html.match(/<link rel="canonical" href="https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})">/);
-          if (canonicalMatch) {
-            extractedVideoId = canonicalMatch[1];
+          // 1. Extraer y validar el objeto estructurado ytInitialPlayerResponse
+          let playerResponseData = null;
+          const playerMatch = html.match(/ytInitialPlayerResponse\s*=\s*({.+?});/);
+          if (playerMatch) {
+            try {
+              playerResponseData = JSON.parse(playerMatch[1]);
+            } catch (_) {}
           }
-        }
 
-        if (!extractedVideoId) {
-          const videoIdMatch = html.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
-          if (videoIdMatch) {
-            extractedVideoId = videoIdMatch[1];
+          if (playerResponseData && playerResponseData.videoDetails) {
+            const vd = playerResponseData.videoDetails;
+            const ps = playerResponseData.playabilityStatus || {};
+
+            // Validaciones estrictas:
+            // - El video DEBE pertenecer exactamente al canal configurado (evita capturar sugerencias de otros canales)
+            // - DEBE estar activo en vivo ahora mismo (no estrenos futuros ni transmisiones finalizadas)
+            // - El estado de reproducción debe ser OK
+            const isCorrectChannel = vd.channelId === channelId;
+            const isActiveLive = Boolean(vd.isLive === true && !vd.isUpcoming);
+            const isPlayable = ps.status === 'OK' && !ps.liveStreamability?.liveStreamabilityRenderer?.offlineSlate;
+
+            if (isCorrectChannel && isActiveLive && isPlayable && vd.videoId) {
+              result.isLive = true;
+              result.videoId = vd.videoId;
+              result.title = vd.title || 'Poder Deportivo En Vivo';
+            }
           }
-        }
 
-        // Verificar señales inequívocas de que la transmisión está activa EN VIVO
-        const isCurrentlyLive =
-          html.includes('"isLive":true') ||
-          html.includes('"isLiveBroadcast":true') ||
-          html.includes('"status":"LIVE"') ||
-          html.includes('itemprop="isLiveBroadcast" content="True"') ||
-          html.includes('"label":"EN VIVO"');
+          // 2. Respaldo estricto: Canonical watch URL + confirmación de canal en el HTML
+          if (!result.isLive) {
+            const canonicalMatch = html.match(/<link\s+rel="canonical"\s+href="https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})"/);
+            const channelConfirmed =
+              html.includes(`"channelId":"${channelId}"`) ||
+              html.includes(`itemprop="channelId" content="${channelId}"`);
 
-        if (extractedVideoId && isCurrentlyLive) {
-          // Extraer título si es posible
-          const titleMatch = html.match(/<title>(.*?)<\/title>/);
-          const title = titleMatch ? titleMatch[1].replace(' - YouTube', '').trim() : 'Poder Deportivo En Vivo';
+            const isLiveSignal =
+              html.includes('"isLive":true') &&
+              !html.includes('"isUpcoming":true') &&
+              !html.includes('LIVE_STREAM_OFFLINE');
 
-          result.isLive = true;
-          result.videoId = extractedVideoId;
-          result.title = title;
+            if (canonicalMatch && channelConfirmed && isLiveSignal) {
+              const detectedVideoId = canonicalMatch[1];
+              const titleMatch = html.match(/<title>(.*?)<\/title>/);
+              const title = titleMatch ? titleMatch[1].replace(' - YouTube', '').trim() : 'Poder Deportivo En Vivo';
+
+              result.isLive = true;
+              result.videoId = detectedVideoId;
+              result.title = title;
+            }
+          }
+
+          // NOTA: Si el canal no está transmitiendo, result.isLive permanece en FALSE y videoId en NULL.
+          // NUNCA usamos regex suelta sobre todo el HTML para evitar capturar videos recomendados ajenos.
         }
       }
 
@@ -126,7 +145,7 @@ export default {
       return response;
 
     } catch (err) {
-      return new Response(JSON.stringify({ isLive: false, videoId: null, error: err.message }), {
+      return new Response(JSON.stringify({ isLive: false, videoId: null, channelId: channelId, error: err.message }), {
         status: 200,
         headers: {
           'Content-Type': 'application/json; charset=utf-8',
