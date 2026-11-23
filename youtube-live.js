@@ -203,6 +203,32 @@
         `;
     }
 
+    function showEmbedBlockedScreen() {
+        isActivelyPlaying = false;
+        if (player) {
+            try { player.destroy(); } catch (_) { }
+            player = null;
+        }
+
+        const ytWatchUrl = currentVideoId
+            ? `https://www.youtube.com/watch?v=${encodeURIComponent(currentVideoId)}`
+            : `https://www.youtube.com/channel/${encodeURIComponent(channelId)}/live`;
+
+        playerContainer.innerHTML = `
+            <div class="player-offline-placeholder" style="background: radial-gradient(circle at center, rgba(30, 20, 20, 0.95) 0%, rgba(15, 8, 8, 0.98) 100%);">
+                <i class="fa fa-youtube-play player-offline-icon" style="color: #ff3333; animation: none;"></i>
+                <h3 class="player-offline-title">Transmisión en Directo Disponible</h3>
+                <p class="player-offline-desc">
+                    La inserción externa de esta transmisión está deshabilitada en YouTube.<br>
+                    Puedes sintonizarla inmediatamente haciendo clic en el botón:
+                </p>
+                <a href="${ytWatchUrl}" target="_blank" rel="noopener noreferrer" class="player-offline-btn" style="background: #e62117; font-size: 1.3rem; padding: 10px 22px;">
+                    <i class="fa fa-external-link"></i> Ver Transmisión en YouTube
+                </a>
+            </div>
+        `;
+    }
+
     function buildEmbedUrl(videoId) {
         const origin = (window.location.origin && window.location.origin !== 'null') ? window.location.origin : undefined;
         const params = new URLSearchParams({
@@ -267,6 +293,7 @@
                     isActivelyPlaying = false;
                     if (event.data === 101 || event.data === 150) {
                         updateLiveBadge('embedBlocked');
+                        showEmbedBlockedScreen();
                     } else {
                         updateLiveBadge('unavailable');
                     }
